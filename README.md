@@ -1,29 +1,34 @@
-Check PyProject
+# Check PyProject
 
-This application used cookiecutter-clibones, a CLI application framework based on the argparse standard library 
-with loguru logging.  Poetry and task are used for project management.
+Check that [project] and [tool.poetry] tables are in-sync in the pyproject.toml file.
 
-The architecture used is a Settings context manager that handles all the command line and config file argument 
-definition, parsing, and validation.
+The Python Packaging User Guide now specifies pyproject.toml metadata.
 
-The application's entry point is in check_pyproject/\_\_main\_\_.py
-In main.py there several TODOs that you will need to visit and clear.
+Poetry predates the metadata specification and instead used the then current standard of
+[tool.poetry] table.  While there is a lot of overlap, there are some differences (ex. dependency package specifiers).
 
-The application may be run:
-* python3 -m check_pyproject --help
-* poetry run python3 -m check_pyproject --help
+So if your project uses poetry and any other tool that requires the current pyproject.toml metadata,
+then you need to manually maintain sync between [project] and [tool.poetry] tables.
 
-So in general, for each command line argument you ought to:
-* optionally add an argument group to the parser in Settings.add_arguments()
-* add argument to the parser in Settings.add_arguments()
-* optionally add validation to Settings.validate_arguments()
+This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly in-sync.
+ 
+## Usage
 
-Refer to application_settings.py which implements help and logging as examples.
+Two usages:
 
-The __example_application() demonstrates using a GracefulInterruptHandler to capture ^C for a main loop.
+1. Install the package using your favorite dev tool.  Examples:
 
-Next take a look at main.main() which demonstrates the use of the Settings context manager.  
+   - `pip install check_pyproject`
+   - `poetry add check_pyproject`
 
-The Settings does have a few extra features including:
-* config files are supported for any command arguments you want to persist.
-* standard logging setup via command line arguments.
+    then just run: `check_pyproject`
+
+2. Or just copy src/check_pyproject_toml.py to your project's bin directory and just run:
+
+    `python ./bin/check_pyproject_toml.py`
+
+# References
+
+- The Python Packaging User Guide can be found here: https://packaging.python.org/en/latest
+- The pyproject.toml specification can be found here: https://pypi.python.org/pypi/pyproject.toml
+- The Poetry pyproject.toml metadata can be found here: https://python-poetry.org/docs/pyproject
