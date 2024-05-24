@@ -17,18 +17,23 @@ This tool checks that overlapping metadata, between [project] and [tool.poetry] 
 Two usages:
 
 1. Install the package using your favorite dev tool.  Examples:
+   
+   - Install taskfile.  ref: https://taskfile.dev/
+   - Install poetry. ref: https://python-poetry.org/
+   - `git clone git@github.com:royw/check_pyproject.git`
+   - `cd check_pyproject`
+   - `task init`
+   - `task build`
+   - Install check\_pyproject:  `pip install dest/check_pyproject-*.whl`
+   
+    then cd to your project and run: `check_pyproject`
 
-   - `pip install check_pyproject`
-   - `poetry add check_pyproject`
-
-    then just run: `check_pyproject`
-
-2. Or just copy src/check_pyproject_toml.py to your project's bin directory and just run:
+2. Or just copy src/check\_pyproject\_toml.py to your project's bin directory and just run:
 
     `python ./bin/check_pyproject_toml.py`
 
 # References
 
-- The Python Packaging User Guide can be found here: https://packaging.python.org/en/latest
-- The pyproject.toml specification can be found here: https://pypi.python.org/pypi/pyproject.toml
-- The Poetry pyproject.toml metadata can be found here: https://python-poetry.org/docs/pyproject
+- The [Python Packaging User Guide](https://packaging.python.org/en/latest)
+- The [pyproject.toml specification](https://pypi.python.org/pypi/pyproject.toml)
+- The [Poetry pyproject.toml metadata](https://python-poetry.org/docs/pyproject)
