@@ -93,6 +93,7 @@ dynamic = []
 # Also note a different grammar is required for version specification
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
+  "packaging>=24.0.0, <25.0.0"
 #  "python>=3.11, <4.0"
 ]
 
@@ -117,12 +118,10 @@ dev = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
   "radon>=6.0.1, <7.0.0",
-  "versio>=0.5.0, <0.6.0"
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
-  "versio>=0.5.0, <0.6.0"
 ]
 
 [build-system]
@@ -238,18 +237,17 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.11"
 loguru = "^0.7.2"
+packaging = "^24.0"
 
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]
 radon = "^6.0.1"
-versio = "^0.5.0"
 pytest = "^8.1.1"
 tox = "^4.14.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"
 tox = "^4.14.2"
-versio = "^0.5.0"
 
 # This section describes the scripts or executables that will be installed when installing the package.
 # When a script is added or updated, run poetry install to make them available in the project’s virtualenv.

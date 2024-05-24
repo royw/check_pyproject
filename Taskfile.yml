@@ -56,10 +56,10 @@ tasks:
     desc: Analyze the code
     cmds:
       - bash -c "mkdir -p metrics"
-      - poetry run radon cc --output-file=metrics/code-complexity.out src/
-      - poetry run radon hal --output-file=metrics/halstead-metrics.out src/
-      - poetry run radon mi --output-file=metrics/maintainability-index.out src/
-      - poetry run radon raw --output-file=metrics/raw-metrics.out src/
+      - poetry run radon cc --show-complexity --json --min=B --output-file=metrics/code-complexity.json src/
+      - poetry run radon hal --json --output-file=metrics/halstead-metrics.json src/
+      - poetry run radon mi --json --output-file=metrics/maintainability-index.json src/
+      - poetry run radon raw --json --output-file=metrics/raw-metrics.json src/
 
   tests:
     desc: Test the code
