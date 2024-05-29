@@ -2,3 +2,4 @@
 dist/
 metrics/
 .tox/
+.coverage

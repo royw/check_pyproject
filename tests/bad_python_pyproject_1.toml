@@ -9,7 +9,7 @@ name = "check_pyproject"
 # TOML type: string
 # The version of the project, as defined in the Version specifier specification.
 # Users SHOULD prefer to specify already-normalized versions
-version = "0.1.0"
+version = "0.1.1a0"
 
 # TOML type: string
 # The summary description of the project in one line. Tools MAY error if this includes multiple lines.
@@ -31,7 +31,7 @@ readme = "README.md"
 
 # TOML type: string
 # The Python version requirements of the project.
-requires-python = ">=3.11"
+#requires-python = ">=3.11"
 
 # TOML type: table
 # The table may have one of two keys. The file key has a string value that is a file path relative to
@@ -65,11 +65,11 @@ keywords = ["python", "CLI", "skeleton"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Environment :: Console",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Natural Language :: English",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
 ]
 
 # TOML type: table with keys and values of strings
@@ -93,8 +93,8 @@ dynamic = []
 # Also note a different grammar is required for version specification
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
-  "packaging>=24.0.0, <25.0.0",
-  "pytest-cov<6.0.0,>=5.0.0"
+  "pathvalidate>=3.2.0, <4.0.0",
+  "usingversion>=0.1.2, <0.2.0"
 ]
 
 # TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
@@ -104,7 +104,7 @@ dependencies = [
 # point and the value is the object reference.
 #
 # more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
-scripts = {'check_pyproject' = "check_pyproject.check_pyproject_toml: main"}
+scripts = {'main' = "check_pyproject.__main__: main"}
 project.gui-scripts = {}
 project.entry-points = {}
 
@@ -118,10 +118,12 @@ dev = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
   "radon>=6.0.1, <7.0.0",
+  "versio>=0.5.0, <0.6.0"
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
+  "pytest-cov>=4.1.0, <5.0.0"
 ]
 
 [build-system]
@@ -163,7 +165,7 @@ name = "check_pyproject"
 
 # The version of the package. Required in package mode
 # This should be a valid PEP 440 string.
-version = "0.1.0"
+version = "0.1.1a0"
 
 # A short description of the package. Required in package mode
 description = "This tool facilitates syncing of the project and the tool.poetry tables in your pyproject.toml."
@@ -237,23 +239,25 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.11"
 loguru = "^0.7.2"
-packaging = "^24.0"
+usingversion = "^0.1.2"
+pathvalidate = "^3.2.0"
 
 # You can organize your dependencies in groups to manage them in a more granular way.
-pytest-cov = "^5.0.0"
 [tool.poetry.group.dev.dependencies]
 radon = "^6.0.1"
+versio = "^0.5.0"
 pytest = "^8.1.1"
 tox = "^4.14.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"
 tox = "^4.14.2"
+pytest-cov = "^4.1.0"
 
 # This section describes the scripts or executables that will be installed when installing the package.
 # When a script is added or updated, run poetry install to make them available in the project’s virtualenv.
 [tool.poetry.scripts]
-check_pyproject = "check_pyproject.check_pyproject_toml: main"
+main = "check_pyproject.__main__: main"
 
 # Poetry supports extras to allow expression of:
 #

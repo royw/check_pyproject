@@ -56,7 +56,9 @@ tasks:
     desc: Analyze the code
     cmds:
       - bash -c "mkdir -p metrics"
-      - poetry run radon cc --show-complexity --json --min=B --output-file=metrics/code-complexity.json src/
+      - poetry run radon cc --show-complexity --json --min=A --output-file=metrics/code-complexity.json src/
+      - poetry run radon cc --show-complexity --min=A src/ -- | tail -n +1 | head -10
+#      - cat metrics/code-complexity.json | jq -r '(["CCM", "Type", "Name"] | (., map(length*"-"))), (.[].[] | [.complexity, .type, .name]) | @tsv'
       - poetry run radon hal --json --output-file=metrics/halstead-metrics.json src/
       - poetry run radon mi --json --output-file=metrics/maintainability-index.json src/
       - poetry run radon raw --json --output-file=metrics/raw-metrics.json src/
@@ -64,7 +66,7 @@ tasks:
   tests:
     desc: Test the code
     cmds:
-      - poetry run pytest tests
+      - poetry run pytest --cov-report term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject tests
       - poetry run tox
 
   clean:
