@@ -15,6 +15,7 @@ tasks:
     cmds:
 #      - poetry run mypy src tests
       - ruff check src tests
+      - poetry run fawltydeps --detailed --ignore-unused radon pytest-cov pytest tox fawltydeps
 
   format:
     desc: Check and reformat the code to a coding standard
@@ -50,7 +51,7 @@ tasks:
   version:
     desc: run the project, having it return its version
     cmds:
-#      - poetry run python3 -m check_pyproject -- --version
+      - poetry run python3 -m check_pyproject.check_pyproject_toml -- --version
 
   metrics:
     desc: Analyze the code

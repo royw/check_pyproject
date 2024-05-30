@@ -30,6 +30,11 @@ from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
+# WARNING, you need to keep these constants manually in-sync with the pyproject.toml
+# This is because this file can just be copied and used stand-alone.
+__project_name__: str = "check_pyproject"
+__version__: str = "0.1.0"
+
 
 def bump_major_version(version: Version) -> Version:
     """
@@ -549,8 +554,11 @@ def main(args: list[str] = None) -> None:  # pragma: no cover
     if len(args) == 0:
         args.append(str(Path.cwd() / "pyproject.toml"))
     for arg in args:
-        logger.info(f'Checking: "{arg}"')
-        number_of_problems += validate_pyproject_toml_file(Path(arg))
+        if "--version" == arg:
+            print(f"{__project_name__}: {__version__}")
+        else:
+            logger.info(f'Checking: "{arg}"')
+            number_of_problems += validate_pyproject_toml_file(Path(arg))
     exit(number_of_problems)
 
 
