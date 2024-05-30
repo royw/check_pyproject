@@ -23,9 +23,14 @@ tasks:
 #      - poetry run black src tests
       - ruff format src tests
 
+  check:
+    desc: Run the raw project script on the project's pyproject.toml file.
+    cmds:
+      - poetry run python3 src/check_pyproject/check_pyproject_toml.py
+
   setup_env:
     cmds:
-      # validate the good_pyproject.toml file
+      # validate the pyproject.toml file
       - poetry check
       # update project dependencies
       - poetry update

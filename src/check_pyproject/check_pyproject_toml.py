@@ -35,6 +35,10 @@ from packaging.version import Version
 __project_name__: str = "check_pyproject"
 __version__: str = "0.1.0"
 
+# remove the time output in log messages, but keep the rest, including color
+LOGURU_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+LOGURU_SHORT_FORMAT = "<level>{message}</level>"
+
 
 def bump_major_version(version: Version) -> Version:
     """
@@ -191,12 +195,6 @@ def wildcard_requirement_to_pep508(specification: str) -> str:
         )
 
 
-def format_dependencies(dependencies: list[str] | dict[str, str] | set[Requirement]) -> str:
-    if isinstance(dependencies, set):
-        return pformat(dependencies).replace("'", '"')
-    return pformat([Requirement(dep) for dep in dependencies]).replace("'", '"')
-
-
 def convert_poetry_to_pep508(value: str, max_bounds=True) -> str:
     """
     Convert poetry dependency specifiers (^v.v, ~ v.v, v.*, <=v, > v, != v) to pep508 format
@@ -339,7 +337,7 @@ def author_field(value: list[str] | list[dict[str]]) -> set[str]:
 
 
 def check_single_field(
-        callback: Callable[[Any], str | set[str] | set[Requirement]], field: str, project_data: dict, poetry_data: dict
+    callback: Callable[[Any], str | set[str] | set[Requirement]], field: str, project_data: dict, poetry_data: dict
 ) -> int:
     """
     Check a field for existence, and equality.
@@ -351,11 +349,13 @@ def check_single_field(
         if field in poetry_data:
             # in both
             logger.info(f'"{field}" found in both [project] and [tool.poetry]')
-            if callback(project_data[field]) != callback(poetry_data[field]):
+            project_out = callback(project_data[field])
+            poetry_out = callback(poetry_data[field])
+            if project_out != poetry_out:
                 # values don't equal
                 logger.error(
-                    f'Values do not match between project.{field}: "{project_data[field]}" '
-                    f'and tool.poetry.{field}: "{poetry_data[field]}"'
+                    f"Values do not match between project.{field} and tool.poetry.{field}.\n"
+                    f"Differences:\n{diff_values(project_out, poetry_out)}"
                 )
                 number_of_problems = 1
         else:
@@ -375,7 +375,7 @@ def check_single_field(
 
 
 def check_fields(
-        callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
+    callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
 ) -> int:
     """
     Check the fields for existence, and equality.
@@ -389,8 +389,52 @@ def check_fields(
     return number_of_problems
 
 
+def format_dependencies(dependencies: list[str] | dict[str, str] | set[Requirement]) -> str:
+    str_dependencies: list[str]
+    if isinstance(dependencies, set):
+        str_dependencies = [str(dep) for dep in dependencies]
+        # return pformat(sorted(list(dependencies))).replace("'", '"')
+    elif isinstance(dependencies, dict):
+        str_dependencies = [
+            str(Requirement(dep + convert_poetry_to_pep508(dependencies[dep]))) for dep in dependencies
+        ]
+    else:
+        str_dependencies = [str(Requirement(dep)) for dep in dependencies]
+    formatted_str_dependencies: str = pformat(sorted(str_dependencies))
+    return formatted_str_dependencies.replace("'", '"')
+
+
+def clean_value(value: str) -> str:
+    return value.replace("set()", "{ }").replace("'", '"')
+
+
+def diff_values(
+    project_data: str | list[str] | dict[str, Any] | set[Any], poetry_data: str | list[str] | dict[str, Any] | set[Any]
+) -> str:
+    if isinstance(project_data, str):
+        return f'"{project_data}"\nvs.\n"{poetry_data}"'
+    if isinstance(project_data, dict):
+        a = {key + "=" + project_data[key] for key in project_data}
+        b = {key + "=" + poetry_data[key] for key in poetry_data}
+        return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
+    if isinstance(project_data, list):
+        a = sorted(list(set(project_data).difference(set(poetry_data))))
+        b = sorted(list(set(poetry_data).difference(set(project_data))))
+        return clean_value(f"{pformat(a)}\nvs\n{pformat(b)}")
+    if isinstance(project_data, set):
+        a = {str(data) for data in project_data}
+        b = {str(data) for data in poetry_data}
+        return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
+
+
+def diff_dependencies(project_data, poetry_data) -> str:
+    a: set = {str(Requirement(dep)) for dep in project_data}
+    b: set = {str(req) for req in package_dependency_field(poetry_data)}
+    return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
+
+
 def check_asymmetric_fields(
-        callback: Callable[[Any], str | set[str] | set[Requirement]], field_dict: dict, toml_data: dict[str, Any]
+    callback: Callable[[Any], str | set[str] | set[Requirement]], field_dict: dict, toml_data: dict[str, Any]
 ) -> int:
     """
     Check fields that differ in table names between project and tool.poetry.
@@ -418,7 +462,10 @@ def check_asymmetric_fields(
 
     # check the field's values
     if callback(project_data) != callback(poetry_data):
-        logger.error(f"[project.{project_name}] does not match poetry.{poetry_name}")
+        logger.error(
+            f"[project.{project_name}] does not match poetry.{poetry_name}\n"
+            f"Differences:\n{diff_dependencies(project_data, poetry_data)}"
+        )
         logger.debug(f"[project] {project_name}:\n{format_dependencies(project_data)}")
         logger.debug(f"[poetry] {poetry_name}:\n{format_dependencies(package_dependency_field(poetry_data))}")
         number_of_problems += 1
@@ -485,11 +532,11 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
 
     # gather all the field names we check, so we can later find the unchecked field names
     checked_field_names: list[str] = (
-            string_field_names
-            + set_field_names
-            + author_field_names
-            + dependency_field_names
-            + ["optional-dependencies", "group"]
+        string_field_names
+        + set_field_names
+        + author_field_names
+        + dependency_field_names
+        + ["optional-dependencies", "group"]
     )
 
     # check the field values when the field names are the same in project and tool.poetry tables
@@ -500,9 +547,7 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
     number_of_field_problems: int = check_fields(package_dependency_field, dependency_field_names, toml_data)
     if number_of_field_problems > 0:
         number_of_problems += number_of_field_problems
-        logger.debug(
-            "project dependency value(s):\n" + format_dependencies(toml_data["project"]["dependencies"])
-        )
+        logger.debug("project dependency value(s):\n" + format_dependencies(toml_data["project"]["dependencies"]))
         logger.debug(
             "poetry dependency value(s) formatted as pep508:\n"
             + format_dependencies(toml_data["tool"]["poetry"]["dependencies"])
@@ -549,12 +594,36 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     return number_of_problems
 
 
+# class CustomFormatter(logging.Formatter):
+#     grey = "\\x1b[38;21m"
+#     yellow = "\\x1b[33;21m"
+#     red = "\\x1b[31;21m"
+#     bold_red = "\\x1b[31;1m"
+#     reset = "\\x1b[0m"
+#     format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+#
+#     FORMATS = {
+#         logging.DEBUG: grey + format + reset,
+#         logging.INFO: grey + format + reset,
+#         logging.WARNING: yellow + format + reset,
+#         logging.ERROR: red + format + reset,
+#         logging.CRITICAL: bold_red + format + reset
+#     }
+#
+#     def format(self, record):
+#         log_fmt = self.FORMATS.get(record.levelno)
+#         formatter = logging.Formatter(log_fmt)
+#         return formatter.format(record)
+
+
 def main(args: list[str] = None) -> None:  # pragma: no cover
     """main function
     If 1 or more arguments are given, they will be passed to `validate_pyproject_toml_file`.
     Else, `validate_pyproject_toml_file` will be called with `$CWD/pyproject.toml`.
     """
     number_of_problems: int = 0
+    logger.remove(None)
+    logger.add(sys.stderr, level="DEBUG", format=LOGURU_SHORT_FORMAT)
     if not args:
         args: list[str] = sys.argv[1:]
     if len(args) == 0:
