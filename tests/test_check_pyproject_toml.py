@@ -22,6 +22,10 @@ class CheckPyProjectTomlTestCase(unittest.TestCase):
         number_of_problems: int = validate_pyproject_toml_file(Path(__file__).parent / "good_pyproject.toml")
         self.assertEqual(0, number_of_problems)
 
+    def test_optional_deps_pyproject(self):
+        number_of_problems: int = validate_pyproject_toml_file(Path(__file__).parent / "optional_deps_pyproject.toml")
+        self.assertEqual(0, number_of_problems)
+
     def test_all_bad_pyproject(self):
         number_of_problems: int = validate_pyproject_toml_file(Path(__file__).parent / "bad_pyproject.toml")
         self.assertEqual(14, number_of_problems)

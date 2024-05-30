@@ -191,6 +191,12 @@ def wildcard_requirement_to_pep508(specification: str) -> str:
         )
 
 
+def format_dependencies(dependencies: list[str] | dict[str, str] | set[Requirement]) -> str:
+    if isinstance(dependencies, set):
+        return pformat(dependencies).replace("'", '"')
+    return pformat([Requirement(dep) for dep in dependencies]).replace("'", '"')
+
+
 def convert_poetry_to_pep508(value: str, max_bounds=True) -> str:
     """
     Convert poetry dependency specifiers (^v.v, ~ v.v, v.*, <=v, > v, != v) to pep508 format
@@ -333,7 +339,7 @@ def author_field(value: list[str] | list[dict[str]]) -> set[str]:
 
 
 def check_single_field(
-    callback: Callable[[Any], str | set[str] | set[Requirement]], field: str, project_data: dict, poetry_data: dict
+        callback: Callable[[Any], str | set[str] | set[Requirement]], field: str, project_data: dict, poetry_data: dict
 ) -> int:
     """
     Check a field for existence, and equality.
@@ -369,7 +375,7 @@ def check_single_field(
 
 
 def check_fields(
-    callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
+        callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
 ) -> int:
     """
     Check the fields for existence, and equality.
@@ -384,7 +390,7 @@ def check_fields(
 
 
 def check_asymmetric_fields(
-    callback: Callable[[Any], str | set[str] | set[Requirement]], field_dict: dict, toml_data: dict[str, Any]
+        callback: Callable[[Any], str | set[str] | set[Requirement]], field_dict: dict, toml_data: dict[str, Any]
 ) -> int:
     """
     Check fields that differ in table names between project and tool.poetry.
@@ -413,8 +419,8 @@ def check_asymmetric_fields(
     # check the field's values
     if callback(project_data) != callback(poetry_data):
         logger.error(f"[project.{project_name}] does not match poetry.{poetry_name}")
-        logger.debug(f"[project] {project_name}:\n{pformat(sorted(project_data))}")
-        logger.debug(f"[poetry] {poetry_name}:\n{pformat(package_dependency_field(poetry_data))}")
+        logger.debug(f"[project] {project_name}:\n{format_dependencies(project_data)}")
+        logger.debug(f"[poetry] {poetry_name}:\n{format_dependencies(package_dependency_field(poetry_data))}")
         number_of_problems += 1
     return number_of_problems
 
@@ -479,11 +485,11 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
 
     # gather all the field names we check, so we can later find the unchecked field names
     checked_field_names: list[str] = (
-        string_field_names
-        + set_field_names
-        + author_field_names
-        + dependency_field_names
-        + ["optional-dependencies", "group"]
+            string_field_names
+            + set_field_names
+            + author_field_names
+            + dependency_field_names
+            + ["optional-dependencies", "group"]
     )
 
     # check the field values when the field names are the same in project and tool.poetry tables
@@ -495,11 +501,11 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
     if number_of_field_problems > 0:
         number_of_problems += number_of_field_problems
         logger.debug(
-            "project dependency value(s):\n" + pformat(toml_data["project"]["dependencies"]).replace("'", '"')
+            "project dependency value(s):\n" + format_dependencies(toml_data["project"]["dependencies"])
         )
         logger.debug(
-            "poetry dependency value(s) formated as pep508:\n"
-            + pformat(toml_data["tool"]["poetry"]["dependencies"]).replace("'", '"')
+            "poetry dependency value(s) formatted as pep508:\n"
+            + format_dependencies(toml_data["tool"]["poetry"]["dependencies"])
         )
 
     # check the field values when the field names differ between project and tool.poetry tables
