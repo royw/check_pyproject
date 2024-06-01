@@ -1,9 +1,7 @@
-import sys
 import tomllib
 import unittest
 from pathlib import Path
 from typing import Any
-from loguru import logger
 
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
@@ -16,11 +14,7 @@ from check_pyproject.check_pyproject_toml import (
     caret_requirement_to_pep508,
     string_field,
     check_fields,
-    LOGURU_FORMAT,
 )
-
-logger.remove(None)
-logger.add(sys.stderr, format=LOGURU_FORMAT)
 
 
 class CheckPyProjectTomlTestCase(unittest.TestCase):
