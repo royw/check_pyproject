@@ -1,0 +1,31 @@
+site_name: CheckPyProject
+
+theme:
+  name: mkdocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+
+plugins:
+- search
+- gen-files:
+    scripts:
+    - scripts/gen_ref_pages.py
+- literate-nav:
+    nav_file: SUMMARY.md
+- section-index
+- mkdocstrings:
+    default_handler: python
+    enable_inventory: false
+    handlers:
+      python:
+        paths: [src]
+        load_external_modules: false
+
+nav:
+  - About: 'README.md'
+  - MyPage: 'my_page.md'
+  # rest of the navigation...
+  # defer to gen-files + literate-nav
+  - Code Reference: reference/
+  # rest of the navigation...

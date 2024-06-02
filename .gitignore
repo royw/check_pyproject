@@ -1,5 +1,6 @@
 .python-version
 dist/
 metrics/
+site/
 .tox/
 .coverage

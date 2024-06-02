@@ -9,7 +9,7 @@ Poetry 2.0 will support PyPA pyproject.toml specification (formerly PEP 621) whi
 this utility.
 
 So if your project uses poetry and any other tool that requires the current pyproject.toml metadata, or you
-are prepping for Poetry 2.0 and do not want to use
+are prepping for Poetry 2.0 and do not want to use the development version of Poetry.
 then you need to manually maintain sync between [project] and [tool.poetry] tables.
 
 This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly in-sync.
@@ -35,8 +35,15 @@ from packaging.version import Version
 __project_name__: str = "check_pyproject"
 __version__: str = "0.1.0"
 
-# remove the time output in log messages, but keep the rest, including color
-LOGURU_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+# Default loguru format for colorized output
+LOGURU_FORMAT = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+)
+# removed the timestamp from the logs
+LOGURU_MEDIUM_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+# just the colorized message in the logs
 LOGURU_SHORT_FORMAT = "<level>{message}</level>"
 
 
