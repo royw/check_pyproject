@@ -21,6 +21,7 @@ for path in sorted(src.rglob("*.py")):
         doc_path = doc_path.with_name("index.md")
         full_doc_path = full_doc_path.with_name("index.md")
     # elif parts[-1] == "__main__":
+    #     # do not document __main__.py
     #     continue
 
     nav[parts] = doc_path.as_posix()
