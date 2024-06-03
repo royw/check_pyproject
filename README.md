@@ -1,8 +1,8 @@
 # Check PyProject
 
-Check that [project] and [tool.poetry] tables are in-sync in the pyproject.toml file.
+Check that [project] and [tool.poetry] tables are in-sync in the `pyproject.toml` file.
 
-The Python Packaging User Guide now specifies pyproject.toml metadata.
+The Python Packaging User Guide now specifies `pyproject.toml` metadata.
 
 Poetry <2.0 predates the metadata specification and instead used the then current standard of
 [tool.poetry] table.  While there is a lot of overlap, there are some differences (ex. dependency package specifiers).
@@ -51,7 +51,7 @@ Two usages:
 
 ### Tasks
 
-The Taskfile.yml is used to build your workflow as a set of tasks.  The initial workflow is:
+The `Taskfile.yml` is used to build your workflow as a set of tasks.  The initial workflow is:
 
     task clean  # removes all build artifacts (metrics, docs,...)
     task build  # lints, formats, checks pyproject.toml, and generates metrics, performs unit tests, 
@@ -68,8 +68,8 @@ When adding a dependency here's my workflow.  Always add the dependency using po
     poetry add --group dev some_tool
     task build
 
-The build ought to fail as the project and tool.poetry dependencies are now out of sync.  But the
-output includes the PEP 508 dependency just added that you can copy and paste into the project table's
+The build ought to fail as the [project] and [tool.poetry] dependencies are now out of sync.  But the
+output includes the PEP 508 dependency just added that you can copy and paste into the [project] table's
 appropriate dependency.
 
     task build
@@ -95,21 +95,27 @@ Should pass this time.
 ### FawltyDeps
 This tool does a great job in helping keep bloat out of your project.  There is one small issue with it,
 it does not distinguish project dependencies from dev/test/doc/... dependencies.  So you have to manually
-add any new tools to the command line exclusion list, like:
+add any new tools to the used list in your [pyproject.toml], like:
 
     poetry run fawltydeps --detailed --ignore-unused radon pytest-cov pytest tox fawltydeps mkdocs 
         mkdocstrings-python mkdocs-literate-nav mkdocs-section-index ruff mkdocs-material
 
 ### Documentation tools 
-I spent years suffering with the complexity of sphinx and RST.  During those lost years, I wished we could
-just use markdown.  I just found the solution with MkDocs!  
+After years of suffering with the complexity of sphinx and RST (the PyPA recommended documentation tool), 
+this project uses MkDocs and MarkDown.  Whoooooop!  
  
 ***Here is a big THANK YOU to the MkDocs team, the plugin teams, and the theme teams!***
  
 ***Fantastic!***
  
-Plugins that do a nice job of auto-documenting the source API, and a fantastic theme from the mkdocs-material team!  
-Literally a dream come true!
+Plugins do a nice job of 
+[automatic code reference](https://mkdocstrings.github.io/recipes/#automatic-code-reference-pages), 
+and a fantastic theme from the mkdocs-material team!
+
+Configuration is in the `mkdocs.yml` file and the `docs/` and `scripts/` directories.
+
+The `task docs` will build the documentation into a static site, `site/`, and run a server at http://localhost:8000/
+and open the page in your browser.
  
 - [MkDocs](https://www.mkdocs.org/) Project documentation with Markdown.
 - [mkdocs-gen-files](https://github.com/oprypin/mkdocs-gen-files) Plugin for MkDocs to programmatically generate documentation pages during the build

@@ -1,3 +1,7 @@
+# MkDocs markdown documentation configuration with material theme and auto API document generation.
+# scripts/gen_ref_pages.py is required for auto API generation.dev_addr
+# Also docs/index.md is a symbolic link to the project's README.md
+
 site_name: CheckPyProject
 site_author: Roy Wright
 copyright: 2024 by Roy Wright
@@ -9,7 +13,6 @@ site_dir: site
 theme:
   name: material
   palette:
-#    scheme: slate
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
       toggle:
