@@ -160,6 +160,13 @@ line-length = 119
 # explicitly adding the rule.
 # extend-select = ["E501"]
 
+[tool.fawltydeps]
+code = ["src"]  # Only search for imports under ./src
+deps = ["pyproject.toml"]  # Only look for declared dependencies here
+ignore_unused = ["radon", "pytest-cov", "pytest", "tox", "fawltydeps", "mkdocs", "mkdocstrings-python",
+  "mkdocs-literate-nav", "mkdocs-section-index", "ruff", "mkdocs-material", "mkdocs-gen-files"]
+output_format = "human_detailed"  # Detailed report by default
+
 ### Poetry build system
 
 [tool.poetry]
