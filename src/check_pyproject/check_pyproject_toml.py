@@ -239,6 +239,10 @@ def poetry_extra_requirements(out: set[Requirement], key: str, value: dict[str, 
         out.add(Requirement(f"{key}[{extra}]{str(convert_poetry_to_pep508(value['version']))}"))
     return out
 
+def poetry_git_requirements(out: set[Requirement], key: str, value: str) -> set[Requirement]:
+    if "git" in value:
+        out.add(Requirement(key + "@git+https://" + value['git'].replace('git@', '')))
+    return out
 
 def poetry_dependency_fields(out: set[Requirement], value: dict[str, dict[str, str]]) -> set[Requirement]:
     """
@@ -282,6 +286,7 @@ def poetry_dependency_fields(out: set[Requirement], value: dict[str, dict[str, s
         if isinstance(v, dict):
             poetry_optional_requirements(out, key, v)
             poetry_extra_requirements(out, key, v)
+            poetry_git_requirements(out, key, v)
     return out
 
 

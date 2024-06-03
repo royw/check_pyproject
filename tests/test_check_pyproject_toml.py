@@ -148,6 +148,14 @@ class CheckPyProjectTomlTestCase(unittest.TestCase):
         self.assertTrue(len(results) == 1)
         self.assertEqual(expected, str(results.pop()), msg="unicorn>=20.1.0, optional=true")
 
+    def test_git_dependency(self):
+        expected: str = str(Requirement("check-pyproject@git+https://github.com:royw/check_pyproject.git"))
+        results: set[Requirement] = set()
+        poetry_dependency_fields(results, {"check-pyproject": {"git": "git@github.com:royw/check_pyproject.git"}})
+        self.assertTrue(len(results) == 1)
+        self.assertEqual(expected, str(results.pop()),
+                         msg="check-pyproject@git+https://github.com:royw/check_pyproject.git")
+
     def test_caret_requirement_to_pep508(self):
         self.assertEqual(
             str(SpecifierSet(">=1.2.3")),

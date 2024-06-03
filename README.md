@@ -57,7 +57,7 @@ The `Taskfile.yml` is used to build your workflow as a set of tasks.  The initia
     task build  # lints, formats, checks pyproject.toml, and generates metrics, performs unit tests, 
                   performs tox testing, and creates the package.
     task docs   # creates local documentation, starts a local server, opens the home page of the documents in a browser.
-    task main   # launches the check_pyproject_toml in the poetry environment.
+    task main   # launches the application in the poetry environment.
 
 This is a starting off point so feel free to CRUD the tasks to fit your needs, or not even use it.
 
