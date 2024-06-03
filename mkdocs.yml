@@ -1,7 +1,39 @@
 site_name: CheckPyProject
+site_author: Roy Wright
+copyright: 2024 by Roy Wright
+repo_name: check_pyproject
+repo_url: https://github.com/royw/check_pyproject
+docs_dir: docs
+site_dir: site
 
 theme:
-  name: mkdocs
+  name: material
+  palette:
+#    scheme: slate
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to light mode
+  locale: en
+  language: en
+  font: false
+  color_mode: auto
+  use_color_mode_toggle: true
   highlightjs: true
   hljs_languages:
     - yaml
@@ -23,8 +55,7 @@ plugins:
         load_external_modules: false
 
 nav:
-  - About: 'README.md'
-  - MyPage: 'my_page.md'
+  - About: 'index.md'
   # rest of the navigation...
   # defer to gen-files + literate-nav
   - Code Reference: reference/
