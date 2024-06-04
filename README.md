@@ -17,7 +17,7 @@ This tool checks that overlapping metadata, between [project] and [tool.poetry] 
 
 ## Prerequisites
 
-* Install the task manager: [taskfile](https://taskfile.dev/)
+* Install the task manager: [Task](https://taskfile.dev/)
 * Install [Poetry](https://python-poetry.org/)
 * Optionally install pyenv-installer.  https://github.com/pyenv/pyenv-installer
   * Install dependent pythons, example:
