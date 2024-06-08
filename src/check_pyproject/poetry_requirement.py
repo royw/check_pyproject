@@ -101,7 +101,8 @@ def convert_poetry_to_pep508(value: str | dict, max_bounds=True, quotes=False) -
     elif isinstance(value, dict):
         out.append("=" + str(value))
 
+    result = ",".join(out)
     if quotes:
-        return ",".join([re.sub(r"([~<>=!]+)([^~<>=!,]+)", r'\1"\2"', v) for v in out])
+        result = re.sub(r"([~<>=!]+)(.+)", r'\1"\2"', result)
 
-    return ",".join(out)
+    return result

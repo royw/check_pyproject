@@ -16,6 +16,7 @@ from check_pyproject.poetry_requirement import (
     convert_poetry_to_pep508,
 )
 
+# valid dependency markers
 valid_markers_set = {
     "os_name",  # posix, java
     "sys_platform",  # linux, linux2, darwin, java1.8.0_51
@@ -113,6 +114,7 @@ def format_diff_values(
     """
     Format the differences between project and poetry values, but not dependencies.
     """
+
     def set_vs_set(aa: set[str], bb: set[str]) -> str:
         aa_str = pformat(sorted(list(aa)))
         bb_str = pformat(sorted(list(bb)))
@@ -178,53 +180,102 @@ def check_python_version(toml_data: dict[str, Any]) -> int:
     return number_of_problems
 
 
-def to_project_requirements(dependency_list: list[str]) -> set[Requirement]:
-    return {Requirement(dep) for dep in dependency_list}
-
-
-def list_to_requirement(key: str, value: list[str | dict[str, str]]) -> Requirement | None:
-    return None
-
-
 def build_git_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    """
+    It is also possible to specify a “git ref” such as branch name, a commit hash or a tag name:
+        MyProject @ git+https://git.example.com/MyProject.git@master
+        MyProject @ git+https://git.example.com/MyProject.git@v1.0
+        MyProject @ git+https://git.example.com/MyProject.git@da39a3ee5e6b4b0d3255bfef95601890afd80709
+        MyProject @ git+https://git.example.com/MyProject.git@refs/pull/123/head
+    Examples:
+        flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
+        numpy = { git = "https://github.com/numpy/numpy.git", tag = "v0.13.2" }
+        subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
+
+    ref: https://pip.pypa.io/en/stable/topics/vcs-support/#git
+    """
     value = re.sub(r"^(git@|https://)", r"git+https://", value)
     url = f"{package_name}@ {value}"
     if "rev" in package_value:
         url = f"{url}@{package_value['rev']}"
-    elif "branch" in package_value:
+    elif "tag" in package_value:
+        url = f"{url}@{package_value['tag']}"
+    if "branch" in package_value:
         url = f"{url}#{package_value['branch']}"
+    if "subdirectory" in package_value:
+        url = f"{url}/{package_value['subdirectory']}"
+    return url
+
+
+def build_hg_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    """
+    It is also possible to specify a revision number, a revision hash, a tag name or a local branch name:
+        MyProject @ hg+http://hg.example.com/MyProject@da39a3ee5e6b
+        MyProject @ hg+http://hg.example.com/MyProject@2019
+        MyProject @ hg+http://hg.example.com/MyProject@v1.0
+        MyProject @ hg+http://hg.example.com/MyProject@special_feature
+    ref: https://pip.pypa.io/en/stable/topics/vcs-support/#mercurial
+    """
+    value = re.sub(r"^(hg@|https://)", r"hg+https://", value)
+    url = f"{package_name}@ {value}"
+    if "rev" in package_value:
+        url = f"{url}@{package_value['rev']}"
+    elif "branch" in package_value:
+        url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
     return url
 
 
-def build_hg_url(package_name: str, package_value: dict[str, str], value: str) -> str:
-    url = f"{package_name}@ {value}"
-    # TODO implement
-    return url
-
-
 def build_svn_url(package_name: str, package_value: dict[str, str], value: str) -> str:
-    url = f"{package_name}@ {value}"
-    # TODO implement
-    return url
+    """
+    You can also give specific revisions to an SVN URL, like so:
+        -e svn+http://svn.example.com/svn/MyProject/trunk@2019#egg=MyProject
+        -e svn+http://svn.example.com/svn/MyProject/trunk@{20080101}#egg=MyProject
+    ref: https://pip.pypa.io/en/stable/topics/vcs-support/#subversion
+    """
+    url = re.sub(r"^(svn@|https://)", r"svn+https://", value)
+    if "rev" in package_value:
+        url = f"{url}@{{{package_value['rev']}}}"
+    elif "branch" in package_value:
+        # TODO ??? guessing on this syntax
+        url = f"{url}@{package_value['branch']}"
+    elif "tag" in package_value:
+        url = f"{url}@{package_value['tag']}"
+    return f"-e {url}#egg={package_name}"
 
 
 def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    """
+    Tags or revisions can be installed like so:
+        MyProject @ bzr+https://bzr.example.com/MyProject/trunk@2019
+        MyProject @ bzr+http://bzr.example.com/MyProject/trunk@v1.0
+    ref: https://pip.pypa.io/en/stable/topics/vcs-support/#bazaar
+    """
+    value = re.sub(r"^(bzr@|https://)", r"bzr+https://", value)
     url = f"{package_name}@ {value}"
-    # TODO implement
+    if "rev" in package_value:
+        url = f"{url}@{package_value['rev']}"
+    elif "branch" in package_value:
+        # TODO ??? guessing on this syntax
+        url = f"{url}@{package_value['branch']}"
+    elif "tag" in package_value:
+        url = f"{url}@{package_value['tag']}"
     return url
 
 
 def build_vcs_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
-    # Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
-    # Note order is important because we will check if vcs is in the url (i.e. substring search)
-    # vcs_schemes = {
-    #     "git": ["git+file", "git+https", "git+ssh", "git+http", "git+git", "git"],
-    #     "hg": ["hg+file", "hg+https", "hg+ssh", "hg+http", "hg+static-http"],
-    #     "svn": ["svn+file", "svn+https", "svn+ssh", "svn+http", "svn+svn", "svn"],
-    #     "bzr": ["bzr+https", "bzr+ssh", "bzr+sftp", "bzr+lp", "bzr+http", "bzr+ftp"],
-    # }
+    """
+    Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
+    Note order is important because we will check if vcs is in the url (i.e. substring search)
+    vcs_schemes = {
+        "git": ["git+file", "git+https", "git+ssh", "git+http", "git+git", "git"],
+        "hg": ["hg+file", "hg+https", "hg+ssh", "hg+http", "hg+static-http"],
+        "svn": ["svn+file", "svn+https", "svn+ssh", "svn+http", "svn+svn", "svn"],
+        "bzr": ["bzr+https", "bzr+ssh", "bzr+sftp", "bzr+lp", "bzr+http", "bzr+ftp"],
+    }
+    VCS URLs: https://pip.pypa.io/en/stable/topics/vcs-support/
+    """
     vcs_builder = {
         "git": build_git_url,
         "hg": build_hg_url,
@@ -241,52 +292,70 @@ def build_vcs_url(package_name: str, package_value: dict[str, str]) -> set[Requi
     return out
 
 
-def add_leftover_markers_to_url(url: str, package_name: str, package_value: dict[str, str]) -> str:
-    markers = set(
-        [
-            mark + str(package_value[mark])
-            for mark in package_value
-            if mark not in ["version", "python", "extras"]
-        ]
-    )
-    extra_markers = markers.intersection(valid_markers_set)
-    if extra_markers:
-        url = f"{url}; {'; '.join(extra_markers)}"
+def add_leftover_markers_to_url(url: str, package_value: dict[str, str], separator: str) -> str:
+    """ add any leftover markers to url, i.e. markers we have not already explicitly handled. """
+    explicitly_handled_markers: list[str] = ["version", "python", "extras", "url", "platform", "source", "optional"]
+    markers: set[str] = {mark for mark in package_value if mark not in explicitly_handled_markers}
+
+    if markers:
+        url: str = f"{url}"
+        for marker in markers:
+            if marker == "markers":
+                url += f"{separator}{package_value[marker]}"
+            else:
+                url += f"{separator}{marker}={package_value[marker]}"
     return url
 
 
-def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str]) -> str:
+def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str], separator: str = ';') -> str:
+    """ add markers to the url """
     if "extras" in package_value:
         value = str(package_value["extras"]).replace("'", "")
         url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
     if "python" in package_value:
         ver = convert_poetry_to_pep508(package_value["python"], max_bounds=False, quotes=True)
         url = f"{url};python_version{ver}"
+    if "platform" in package_value:
+        url = f"{url};sys_platform=='{package_value['platform']}'"
+    # if "source" in package_value:
+    #     url = f"{url};source={package_value['source']}"
 
-    add_leftover_markers_to_url(url, package_name, package_value)
+    url = add_leftover_markers_to_url(url, package_value, separator)
     return url
 
 
 def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+    """ create the url for non-version controlled system dependencies """
     out: set[Requirement] = set()
 
     if "path" in package_value:
         out.add(Requirement(f"{package_name}@ {package_value['path']}"))
-    elif "source" in package_value:
-        out.add(Requirement(f"{package_name}@ {package_value['source']}"))
     elif "version" in package_value:
         url = f"{package_name} {convert_poetry_to_pep508(package_value['version'])}"
         url = add_markers_to_url(url, package_name, package_value)
         out.add(Requirement(url))
+    elif "url" in package_value:
+        url = f"{package_name}@ {package_value['url']}"
+        url = add_markers_to_url(url, package_name, package_value, separator='')
+        out.add(Requirement(url))
+    else:
+        url = f"{package_name}"
+        url = add_markers_to_url(url, package_name, package_value, separator='')
+        out.add(Requirement(url))
+
     return out
 
 
 def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
     """
-    flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
-    numpy = { git = "https://github.com/numpy/numpy.git", tag = "v0.13.2" }
-    subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
-    requests3 = { git = "git@github.com:requests/requests.git" }
+    Converts a dictionary to a requirement
+    Examples:
+        requests3 = { git = "git@github.com:requests/requests.git" }
+        pathlib2a = { version = "^2.2", markers = "python_version <= '3.4' or sys_platform == 'win32'" }
+        foo1 = [
+            {version = "<=1.9", python = ">=3.6,<3.8"},
+            {version = "^2.0", python = ">=3.8"}
+        ]
     """
 
     out: set[Requirement] = build_vcs_url(package_name, package_value)
@@ -299,7 +368,41 @@ def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set
     return out
 
 
+def list_to_requirement(key: str, values: list[str | dict[str, str]]) -> set[Requirement]:
+    """
+    Examples:
+         foo1 = [
+            {version = "<=1.9", python = ">=3.6,<3.8"},
+            {version = "^2.0", python = ">=3.8"}
+        ]
+        foo2 = [
+            { platform = "darwin", url = "https://example.com/example-1.0-py3-none-any.whl" },
+            { platform = "linux", version = "^1.0" },
+        ]
+        foo3 = [
+            { platform = "darwin", url = "https://example.com/foo-1.0.0-py3-none-macosx_11_0_arm64.whl" },
+            { platform = "linux", version = "^1.0", source = "pypi" },
+        ]
+
+    """
+    out: set[Requirement] = set()
+    for value in values:
+        if isinstance(value, str):
+            out.add(Requirement(f"{key}{convert_poetry_to_pep508(value)}"))
+        if isinstance(value, dict):
+            out = out.union(dict_to_requirement(key, value))
+    return out
+
+
 def to_poetry_requirements(dependencies: dict[str, str | dict[str, str] | list[dict[str, str]]]) -> set[Requirement]:
+    """
+    Convert given poetry dependencies to a set of requirements.  Poetry dependencies can be:
+    key - str,
+    key - list,
+    key - dict
+    Also poetry specifies the required python as a dependency while project has a requires-python field,
+    so ignore any python dependency.
+    """
     out: set[Requirement] = set()
     for key, value in dependencies.items():
         if key == "python":
@@ -307,21 +410,24 @@ def to_poetry_requirements(dependencies: dict[str, str | dict[str, str] | list[d
         if isinstance(value, str):
             out.add(Requirement(f"{key}{convert_poetry_to_pep508(value)}"))
         elif isinstance(value, list):
-            req_list = list_to_requirement(key, value)
-            if req_list:
-                out.add(req_list)
+            out = out.union(list_to_requirement(key, value))
         elif isinstance(value, dict):
             out = out.union(dict_to_requirement(key, value))
     return out
 
 
-def format_requirement_set(requirements: set[Requirement]) -> str:
-    return pformat(sorted([str(r) for r in requirements]))
-
-
 def check_dependencies(key: str | None, project_dependencies: list[str], poetry_dependencies: dict[str, Any]) -> int:
+    """
+    Given a list of project dependencies and a dictionary of poetry dependencies, convert each of them
+    into a set of requirements.  Then find and report any differences in the sets.
+    Return the 1 if any differences are found, 0 otherwise.
+    """
+
+    def format_requirement_set(requirements: set[Requirement]) -> str:
+        return pformat(sorted([str(r) for r in requirements]))
+
     number_of_problems: int = 0
-    project_requirements: set[Requirement] = to_project_requirements(project_dependencies)
+    project_requirements: set[Requirement] = {Requirement(dep) for dep in project_dependencies}
     poetry_requirements: set[Requirement] = to_poetry_requirements(poetry_dependencies)
     logger.debug(f"project_requirements: {format_requirement_set(project_requirements)}")
     logger.debug(f"poetry_requirements: {format_requirement_set(poetry_requirements)}")

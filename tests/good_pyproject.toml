@@ -96,18 +96,24 @@ dependencies = [
   "pathvalidate>=3.2.0, <4.0.0",
   "usingversion>=0.1.2, <0.2.0",
   'gunicorn[gevent]<21.0.0,>=20.1.0',
-  'my-cool-package@ foo',
   'my-package1@ ../my-package/',
   'my-package2@ ../my-package/dist/my-package-0.1.0.tar.gz',
   'numpy@ git+https://github.com/numpy/numpy.git@v0.13.2',
   'pathlib2<3.0.0,>=2.2.0; python_version >= "3.2.0"',
-  'pathlib2a<3.0.0,>=2.2.0',
-  'subdir_package@ git+https://github.com/myorg/mypackage_with_subdirs.git',
+  'pathlib2a<3.0.0,>=2.2.0; python_version <= "3.4" or sys_platform == "win32"',
+  'subdir_package@ git+https://github.com/myorg/mypackage_with_subdirs.git/subdir',
   'tomli<3.0.0,>=2.0.1; python_version < "3.11.0"',
   'flask@ git+https://github.com/pallets/flask.git@38eb5d3b',
   'requests3@ git+https://github.com/requests/requests.git',
   'requests2@ git+https://github.com/kennethreitz/requests.git#next',
-  'requests@ git+https://github.com/requests/requests.git'
+  'requests@ git+https://github.com/requests/requests.git',
+  'foo1<3.0.0,>=2.0.0; python_version >= "3.8.0"',
+  'foo1<=1.9.0; python_version >= "3.6.0,<3.8.0"',
+  'foo2<2.0.0,>=1.0.0; sys_platform == "linux"',
+  "foo2@ https://example.com/example-1.0-py3-none-any.whl;sys_platform=='darwin'",
+  "foo3@ https://example.com/foo-1.0.0-py3-none-macosx_11_0_arm64.whl;sys_platform=='darwin'",
+  'foo3<2.0.0,>=1.0.0; sys_platform == "linux"',
+  'my-cool-package>=0.0.0'
 ]
 
 # TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
