@@ -68,7 +68,7 @@ def check_fields(
     callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
 ) -> int:
     """
-    Check the fields for existence, and equality.
+    Check the "project" and "tools.poetry" fields for existence, and equality.
     Returns the number of problems detected
     """
     number_of_problems: int = 0
@@ -107,33 +107,33 @@ def check_fields(
     return number_of_problems
 
 
-def clean_value(output_value_string: str) -> str:
-    """
-    From a value output string, replace "set()" with "{ }" and replace single quotes with double quotes
-    """
-    return output_value_string.replace("set()", "{ }").replace("'", '"')
-
-
 def format_diff_values(
     project_data: str | list[str] | dict[str, Any] | set[Any], poetry_data: str | list[str] | dict[str, Any] | set[Any]
 ) -> str:
     """
     Format the differences between project and poetry values, but not dependencies.
     """
+    def set_vs_set(aa: set[str], bb: set[str]) -> str:
+        aa_str = pformat(sorted(list(aa)))
+        bb_str = pformat(sorted(list(bb)))
+        # format the "a vs b" then replace any "set()" with "{ }" and replace single quotes with double quotes
+        return f"{aa_str}\nvs\n{bb_str}".replace("set()", "{ }").replace("'", '"')
+
     if isinstance(project_data, str):
         return f'"{project_data}"\nvs.\n"{poetry_data}"'
     if isinstance(project_data, dict):
         a = {key + "=" + project_data[key] for key in project_data}
         b = {key + "=" + poetry_data[key] for key in poetry_data}
-        return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
+        return set_vs_set(a.difference(b), b.difference(a))
     if isinstance(project_data, list):
-        a = sorted(list(set(project_data).difference(set(poetry_data))))
-        b = sorted(list(set(poetry_data).difference(set(project_data))))
-        return clean_value(f"{pformat(a)}\nvs\n{pformat(b)}")
+        a = set(project_data).difference(set(poetry_data))
+        b = set(poetry_data).difference(set(project_data))
+        return set_vs_set(a, b)
     if isinstance(project_data, set):
         a = {str(data) for data in project_data}
         b = {str(data) for data in poetry_data}
-        return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
+        return set_vs_set(a.difference(b), b.difference(a))
+    raise TypeError(f"Unexpected type {type(project_data)}")
 
 
 def check_python_version(toml_data: dict[str, Any]) -> int:
@@ -186,6 +186,101 @@ def list_to_requirement(key: str, value: list[str | dict[str, str]]) -> Requirem
     return None
 
 
+def build_git_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    value = re.sub(r"^(git@|https://)", r"git+https://", value)
+    url = f"{package_name}@ {value}"
+    if "rev" in package_value:
+        url = f"{url}@{package_value['rev']}"
+    elif "branch" in package_value:
+        url = f"{url}#{package_value['branch']}"
+    elif "tag" in package_value:
+        url = f"{url}@{package_value['tag']}"
+    return url
+
+
+def build_hg_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    url = f"{package_name}@ {value}"
+    # TODO implement
+    return url
+
+
+def build_svn_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    url = f"{package_name}@ {value}"
+    # TODO implement
+    return url
+
+
+def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) -> str:
+    url = f"{package_name}@ {value}"
+    # TODO implement
+    return url
+
+
+def build_vcs_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+    # Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
+    # Note order is important because we will check if vcs is in the url (i.e. substring search)
+    # vcs_schemes = {
+    #     "git": ["git+file", "git+https", "git+ssh", "git+http", "git+git", "git"],
+    #     "hg": ["hg+file", "hg+https", "hg+ssh", "hg+http", "hg+static-http"],
+    #     "svn": ["svn+file", "svn+https", "svn+ssh", "svn+http", "svn+svn", "svn"],
+    #     "bzr": ["bzr+https", "bzr+ssh", "bzr+sftp", "bzr+lp", "bzr+http", "bzr+ftp"],
+    # }
+    vcs_builder = {
+        "git": build_git_url,
+        "hg": build_hg_url,
+        "svn": build_svn_url,
+        "bzr": build_bzr_url,
+    }
+    out: set[Requirement] = set()
+    for vcs in vcs_builder:
+        if vcs in package_value:
+            value = package_value[vcs]
+            url = vcs_builder[vcs](package_name, package_value, value)
+            out.add(Requirement(url))
+            break
+    return out
+
+
+def add_leftover_markers_to_url(url: str, package_name: str, package_value: dict[str, str]) -> str:
+    markers = set(
+        [
+            mark + str(package_value[mark])
+            for mark in package_value
+            if mark not in ["version", "python", "extras"]
+        ]
+    )
+    extra_markers = markers.intersection(valid_markers_set)
+    if extra_markers:
+        url = f"{url}; {'; '.join(extra_markers)}"
+    return url
+
+
+def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str]) -> str:
+    if "extras" in package_value:
+        value = str(package_value["extras"]).replace("'", "")
+        url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
+    if "python" in package_value:
+        ver = convert_poetry_to_pep508(package_value["python"], max_bounds=False, quotes=True)
+        url = f"{url};python_version{ver}"
+
+    add_leftover_markers_to_url(url, package_name, package_value)
+    return url
+
+
+def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+    out: set[Requirement] = set()
+
+    if "path" in package_value:
+        out.add(Requirement(f"{package_name}@ {package_value['path']}"))
+    elif "source" in package_value:
+        out.add(Requirement(f"{package_name}@ {package_value['source']}"))
+    elif "version" in package_value:
+        url = f"{package_name} {convert_poetry_to_pep508(package_value['version'])}"
+        url = add_markers_to_url(url, package_name, package_value)
+        out.add(Requirement(url))
+    return out
+
+
 def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
     """
     flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
@@ -193,55 +288,11 @@ def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set
     subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
     requests3 = { git = "git@github.com:requests/requests.git" }
     """
-    # Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
-    # Note order is important because we will check if vcs is in the url (i.e. substring search)
-    vcs_schemes = {
-        "git": ["git+file", "git+https", "git+ssh", "git+http", "git+git", "git"],
-        "hg": ["hg+file", "hg+https", "hg+ssh", "hg+http", "hg+static-http"],
-        "svn": ["svn+file", "svn+https", "svn+ssh", "svn+http", "svn+svn", "svn"],
-        "bzr": ["bzr+https", "bzr+ssh", "bzr+sftp", "bzr+lp", "bzr+http", "bzr+ftp"],
-    }
 
-    out: set[Requirement] = set()
+    out: set[Requirement] = build_vcs_url(package_name, package_value)
 
-    for vcs in vcs_schemes:
-        if vcs in package_value:
-            value = package_value[vcs]
-            if vcs == "git":
-                value = re.sub(r"^(git@|https://)", r"git+https://", value)
-            url = f"{package_name}@ {value}"
-            if "rev" in package_value:
-                url = f"{url}@{package_value['rev']}"
-            elif "branch" in package_value:
-                url = f"{url}#{package_value['branch']}"
-            elif "tag" in package_value:
-                url = f"{url}@{package_value['tag']}"
-            out.add(Requirement(url))
-            break
-    else:
-        if "path" in package_value:
-            out.add(Requirement(f"{package_name}@ {package_value['path']}"))
-        elif "source" in package_value:
-            out.add(Requirement(f"{package_name}@ {package_value['source']}"))
-        elif "version" in package_value:
-            url = f"{package_name} {convert_poetry_to_pep508(package_value['version'])}"
-            if "extras" in package_value:
-                value = str(package_value["extras"]).replace("'", "")
-                url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
-            if "python" in package_value:
-                ver = convert_poetry_to_pep508(package_value["python"], max_bounds=False, quotes=True)
-                url = f"{url};python_version{ver}"
-            markers = set(
-                [
-                    mark + str(package_value[mark])
-                    for mark in package_value
-                    if mark not in ["version", "python", "extras"]
-                ]
-            )
-            extra_markers = markers.intersection(valid_markers_set)
-            if extra_markers:
-                url = f"{url}; {'; '.join(extra_markers)}"
-            out.add(Requirement(url))
+    if not out:
+        out = build_dict_url(package_name, package_value)
 
     if not out:
         logger.warning(f"unable to parse dependency: {package_name} @ {package_value}")
