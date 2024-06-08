@@ -293,7 +293,7 @@ def build_vcs_url(package_name: str, package_value: dict[str, str]) -> set[Requi
 
 
 def add_leftover_markers_to_url(url: str, package_value: dict[str, str], separator: str) -> str:
-    """ add any leftover markers to url, i.e. markers we have not already explicitly handled. """
+    """add any leftover markers to url, i.e. markers we have not already explicitly handled."""
     explicitly_handled_markers: list[str] = ["version", "python", "extras", "url", "platform", "source", "optional"]
     markers: set[str] = {mark for mark in package_value if mark not in explicitly_handled_markers}
 
@@ -307,8 +307,8 @@ def add_leftover_markers_to_url(url: str, package_value: dict[str, str], separat
     return url
 
 
-def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str], separator: str = ';') -> str:
-    """ add markers to the url """
+def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str], separator: str = ";") -> str:
+    """add markers to the url"""
     if "extras" in package_value:
         value = str(package_value["extras"]).replace("'", "")
         url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
@@ -325,7 +325,7 @@ def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str
 
 
 def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
-    """ create the url for non-version controlled system dependencies """
+    """create the url for non-version controlled system dependencies"""
     out: set[Requirement] = set()
 
     if "path" in package_value:
@@ -336,11 +336,11 @@ def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requ
         out.add(Requirement(url))
     elif "url" in package_value:
         url = f"{package_name}@ {package_value['url']}"
-        url = add_markers_to_url(url, package_name, package_value, separator='')
+        url = add_markers_to_url(url, package_name, package_value, separator="")
         out.add(Requirement(url))
     else:
         url = f"{package_name}"
-        url = add_markers_to_url(url, package_name, package_value, separator='')
+        url = add_markers_to_url(url, package_name, package_value, separator="")
         out.add(Requirement(url))
 
     return out
