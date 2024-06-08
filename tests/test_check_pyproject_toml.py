@@ -1,3 +1,4 @@
+import sys
 import tomllib
 import unittest
 from pathlib import Path
@@ -6,15 +7,21 @@ from typing import Any
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
+from check_pyproject.__main__ import LOGURU_SHORT_FORMAT
 from check_pyproject.check_pyproject_toml import (
     validate_pyproject_toml_file,
     convert_poetry_to_pep508,
-    fill_version_to_three_parts,
-    poetry_dependency_fields,
-    caret_requirement_to_pep508,
     string_field,
     check_fields,
+    to_poetry_requirements,
 )
+from check_pyproject.poetry_requirement import caret_requirement_to_pep508
+from check_pyproject.version_utils import VersionUtils
+
+from loguru import logger
+
+logger.remove(None)
+logger.add(sys.stderr, level="DEBUG", format=LOGURU_SHORT_FORMAT)
 
 
 class CheckPyProjectTomlTestCase(unittest.TestCase):
@@ -63,7 +70,7 @@ class CheckPyProjectTomlTestCase(unittest.TestCase):
         self.assertEqual(1, number_of_problems)
 
     def test_missing_field(self):
-        with open(Path.cwd() / "tests" / "good_pyproject.toml", "r", encoding="utf-8") as f:
+        with open(Path(__file__).parent / "good_pyproject.toml", "r", encoding="utf-8") as f:
             toml_data: dict[str, Any] = tomllib.loads(f.read())
         self.assertTrue(0 == check_fields(string_field, ["bogus"], toml_data))
 
@@ -122,39 +129,40 @@ class CheckPyProjectTomlTestCase(unittest.TestCase):
         # note, packaging module does not allow bare version numbers, ex: "1.2.3"
 
     def test_fill_version_to_three_parts(self):
-        self.assertEqual("0.0.0", fill_version_to_three_parts(""))
-        self.assertEqual("0.0.0", fill_version_to_three_parts("0"))
-        self.assertEqual("0.0.0", fill_version_to_three_parts("0.0"))
-        self.assertEqual("0.0.0", fill_version_to_three_parts("0.0.0"))
+        self.assertEqual("0.0.0", VersionUtils.fill_version_to_three_parts(""))
+        self.assertEqual("0.0.0", VersionUtils.fill_version_to_three_parts("0"))
+        self.assertEqual("0.0.0", VersionUtils.fill_version_to_three_parts("0.0"))
+        self.assertEqual("0.0.0", VersionUtils.fill_version_to_three_parts("0.0.0"))
 
-    def test_dependency_extra(self):
+    def test_dependency_extras(self):
         expected: str = str(Requirement("unicorn[gevent]>=20.1.0"))
-        results: set[Requirement] = set()
-        poetry_dependency_fields(results, {"unicorn": {"extra": "gevent", "version": ">=20.1"}})
+        results: set[Requirement] = to_poetry_requirements({"unicorn": {"extras": ["gevent"], "version": ">=20.1"}})
         self.assertTrue(len(results) == 1)
         self.assertEqual(expected, str(results.pop()), msg="unicorn[gevent]>=20.1.0")
 
     def test_dependency_two_extras(self):
         expected: str = str(Requirement("unicorn[gevent,mysql]>=20.1.1"))
-        results: set[Requirement] = set()
-        poetry_dependency_fields(results, {"unicorn": {"extra": ["gevent", "mysql"], "version": ">=20.1.1"}})
+        results: set[Requirement] = to_poetry_requirements(
+            {"unicorn": {"extras": ["gevent", "mysql"], "version": ">=20.1.1"}}
+        )
         self.assertTrue(len(results) == 1)
         self.assertEqual(expected, str(results.pop()), msg="unicorn[gevent]>=20.1.1")
 
     def test_optional_dependency(self):
         expected: str = str(Requirement("unicorn>=20.1.0"))
-        results: set[Requirement] = set()
-        poetry_dependency_fields(results, {"unicorn": {"optional": "true", "version": ">=20.1"}})
+        results: set[Requirement] = to_poetry_requirements({"unicorn": {"optional": "true", "version": ">=20.1"}})
         self.assertTrue(len(results) == 1)
         self.assertEqual(expected, str(results.pop()), msg="unicorn>=20.1.0, optional=true")
 
     def test_git_dependency(self):
-        expected: str = str(Requirement("check-pyproject@git+https://github.com:royw/check_pyproject.git"))
-        results: set[Requirement] = set()
-        poetry_dependency_fields(results, {"check-pyproject": {"git": "git@github.com:royw/check_pyproject.git"}})
+        expected: str = str(Requirement("check-pyproject@ git+https://github.com:royw/check_pyproject.git"))
+        results: set[Requirement] = to_poetry_requirements(
+            {"check-pyproject": {"git": "git@github.com:royw/check_pyproject.git"}}
+        )
         self.assertTrue(len(results) == 1)
-        self.assertEqual(expected, str(results.pop()),
-                         msg="check-pyproject@git+https://github.com:royw/check_pyproject.git")
+        self.assertEqual(
+            expected, str(results.pop()), msg="check-pyproject@git+https://github.com:royw/check_pyproject.git"
+        )
 
     def test_caret_requirement_to_pep508(self):
         self.assertEqual(

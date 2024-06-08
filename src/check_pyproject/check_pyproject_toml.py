@@ -6,306 +6,29 @@ Entry point is the main() function located at the bottom of this file.
 """
 
 import re
-import sys
 import tomllib
 from pathlib import Path
 from pprint import pformat
 from typing import Callable, Any
 from loguru import logger
 from packaging.requirements import Requirement
-from packaging.specifiers import SpecifierSet
-from packaging.version import Version
-
-# WARNING, you need to keep these constants manually in-sync with the pyproject.toml
-# This is because this file can just be copied and used stand-alone.
-__project_name__: str = "check_pyproject"
-__version__: str = "0.1.0"
-
-# Default loguru format for colorized output
-LOGURU_FORMAT = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+from check_pyproject.poetry_requirement import (
+    convert_poetry_to_pep508,
 )
-# removed the timestamp from the logs
-LOGURU_MEDIUM_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-# just the colorized message in the logs
-LOGURU_SHORT_FORMAT = "<level>{message}</level>"
 
-
-def bump_major_version(version: Version) -> Version:
-    """
-    Increment the major version by 1 and zeroing the minor and patch versions and removing any pre,
-    post, development, or local segments.  Preserves the epoch.
-    """
-    epoch_str = f"{version.epoch}!" if version.epoch else ""
-    major = 0
-    if len(version.release) >= 1:
-        major = version.release[0]
-    return Version(f"{epoch_str}{major + 1}.0.0")
-
-
-def bump_minor_version(version: Version) -> Version:
-    """
-    Increment the minor version by 1 and zeroing the patch version and removing any pre,
-    post, development, or local segments.  Preserves the epoch and major version.
-    """
-    epoch_str = f"{version.epoch}!" if version.epoch else ""
-    major: int = 0
-    minor: int = 0
-    if len(version.release) >= 1:
-        major = version.release[0]
-    if len(version.release) >= 2:
-        minor = version.release[1]
-    return Version(f"{epoch_str}{major}.{minor + 1}.0")
-
-
-def bump_patch_version(version: Version) -> Version:
-    """
-    Increment the patch (micro) version by 1 and removing any pre, post, development,
-    or local segments.  Preserves the epoch and major version.
-    """
-    epoch_str = f"{version.epoch}!" if version.epoch else ""
-    major: int = 0
-    minor: int = 0
-    patch: int = 0
-    if len(version.release) >= 1:
-        major = version.release[0]
-    if len(version.release) >= 2:
-        minor = version.release[1]
-    if len(version.release) >= 3:
-        patch = version.release[2]
-    return Version(f"{epoch_str}{major}.{minor}.{patch + 1}")
-
-
-def max_version(version_str: str) -> Version:
-    """
-    Increment the version number to the upper bound of the version.
-    Examples:
-        "1.2.4" will be bumped to "2.0.0"
-        "0.1.2" will be bumped to "0.2.0"
-        "0.0.7" will be bumped to "0.0.8"
-        "0 will bump to "1.0.0"
-        "0.0 will bump to "0.1.0"
-        "0.0.0 will bump to "0.1.0"
-    """
-    ver: Version = Version(version_str)
-    if ver.major:
-        ver = bump_major_version(ver)
-    elif ver.minor:
-        ver = bump_minor_version(ver)
-    elif ver.micro:
-        ver = bump_patch_version(ver)
-    else:
-        # 0 or 0.0 or 0.0.0
-        if len(ver.release) == 1:
-            # 0 bumping to 1
-            ver = bump_major_version(ver)
-        else:
-            # 0.0 bumping to 0.1
-            # and special case of 0.0.0 bumping to 0.1.0
-            ver = bump_minor_version(ver)
-    return ver
-
-
-def fill_version_to_three_parts(version_str: str) -> str:
-    """
-    Fill out requirement to at least 3 parts, ex: 1.2 => 1.2.0
-    """
-    if not version_str:
-        return "0.0.0"
-    while len(version_str.split(".")) < 3:
-        version_str += ".0"
-    return version_str
-
-
-def caret_requirement_to_pep508(specification: str, max_bounds: bool = True) -> str:
-    """
-    Caret requirements allow SemVer compatible updates to a specified version. An update is allowed if the
-    new version number does not modify the left-most non-zero digit in the major, minor, patch grouping.
-
-    By default, an upper bound will be generated (ex:  "^1.2.3" becomes ">=1.2.3,<2.0.0").
-    To disable this behavior, set max_bounds to False (ex:  "^1.2.3" becomes ">=1.2.3").
-    """
-    if max_bounds:
-        return str(
-            SpecifierSet(
-                f">={fill_version_to_three_parts(specification)}, "
-                f"<{fill_version_to_three_parts(str(max_version(specification)))}"
-            )
-        )
-    else:
-        return str(SpecifierSet(f">={fill_version_to_three_parts(specification)}"))
-
-
-def tilde_requirement_to_pep508(specification: str) -> str:
-    """
-    Tilde requirements specify a minimal version with some ability to update. If you specify a major, minor,
-    and patch version or only a major and minor version, only patch-level changes are allowed. If you only
-    specify a major version, then minor- and patch-level changes are allowed.
-
-    examples:
-      "~1.2.3" becomes ">=1.2.3,<1.3.0"
-      "~1.2" becomes ">=1.2.0, <1.3.0"
-      "~1" becomes ">=1.0.0, <2.0.0")
-    """
-    ver: Version = Version(specification)
-    if len(ver.release) == 1:
-        ver = bump_major_version(ver)
-    else:
-        ver = bump_minor_version(ver)
-    return str(
-        SpecifierSet(f">={fill_version_to_three_parts(specification)}, " f" <{fill_version_to_three_parts(str(ver))}")
-    )
-
-
-def wildcard_requirement_to_pep508(specification: str) -> str:
-    """
-    Wildcard requirements allow for the latest (dependency dependent) version where the wildcard
-    is positioned. *, 1.* and 1.2.* are examples of wildcard requirements.
-
-    examples:
-    "*" becomes ">=0.0.0"
-    "1*" becomes ">=1.0.0, <2.0.0"
-    "1.2.*" becomes ">=1.2.0, <1.3.0"
-    """
-    if specification == "*":
-        return str(SpecifierSet(f">={fill_version_to_three_parts('0')}"))
-    else:
-        version_string: str = specification.rstrip("*").rstrip(".")  # ex: "1", "1.2"
-        ver: Version = Version(version_string)
-
-        match len(ver.release):
-            case 1:
-                ver = bump_major_version(ver)
-            case 2:
-                ver = bump_minor_version(ver)
-
-        return str(
-            SpecifierSet(
-                f">={fill_version_to_three_parts(version_string)}, " f" <{fill_version_to_three_parts(str(ver))}"
-            )
-        )
-
-
-def convert_poetry_to_pep508(value: str, max_bounds=True) -> str:
-    """
-    Convert poetry dependency specifiers (^v.v, ~ v.v, v.*, <=v, > v, != v) to pep508 format
-    returns a string containing comma separated pep508 specifiers
-    """
-    out: list[str] = []
-    value = re.sub(r"([\^~<>=!]+)\s+", r"\1", value)
-    requirement: str
-    for requirement in re.split(r",\s*", value):
-        # ^a.b.c
-        if requirement.startswith("^"):
-            out.append(caret_requirement_to_pep508(requirement[1:], max_bounds))
-        elif requirement.startswith("~"):
-            out.append(tilde_requirement_to_pep508(requirement[1:]))
-        elif "*" in requirement:
-            out.append(wildcard_requirement_to_pep508(requirement))
-        else:
-            out.append(str(SpecifierSet(fill_version_to_three_parts(requirement))))
-    return ",".join(out)
-
-
-def project_dependency_fields(out: set[Requirement], values: list[str]) -> set[Requirement]:
-    """
-    Convert list of pep508 strings to a set of packaging requirements
-    """
-    for value in values:
-        out.add(Requirement(value))
-    return out
-
-
-def poetry_optional_requirements(out: set[Requirement], key: str, value: dict[str, str]) -> set[Requirement]:
-    """
-    Optional dependency
-    """
-    if "version" in value and "optional" in value:
-        if value["optional"].strip('"').lower() == "true":
-            out.add(Requirement(f"{key}{str(convert_poetry_to_pep508(value['version']))}"))
-    return out
-
-
-def poetry_extra_requirements(out: set[Requirement], key: str, value: dict[str, str]) -> set[Requirement]:
-    """
-    Extra dependency
-    """
-    if "version" in value and "extra" in value:
-        extra: str | list[str] = value["extra"]
-        if isinstance(extra, list):
-            extra = ",".join(extra)
-        out.add(Requirement(f"{key}[{extra}]{str(convert_poetry_to_pep508(value['version']))}"))
-    return out
-
-def poetry_git_requirements(out: set[Requirement], key: str, value: str) -> set[Requirement]:
-    if "git" in value:
-        out.add(Requirement(key + "@git+https://" + value['git'].replace('git@', '')))
-    return out
-
-def poetry_dependency_fields(out: set[Requirement], value: dict[str, dict[str, str]]) -> set[Requirement]:
-    """
-    There is a special case where the required python version is in different locations:
-    project.requires-python and tool.poetry.dependencies.python.  So for poetry dependencies
-    we skip "python" and handle the special case elsewhere.
-
-    We also have to handle optional and extra dependencies.
-    TODO: correlate extras with dependencies between project and poetry.
-    From [Extras](https://python-poetry.org/docs/pyproject/#extras):
-
-        [tool.poetry.dependencies]
-        # These packages are mandatory and form the core of this package’s distribution.
-        mandatory = "^1.0"
-        pandas = {version="^2.2.1", extras=["computation", "performance"]}
-
-        # A list of all the optional dependencies, some of which are included in the
-        # below `extras`. They can be opted into by apps.
-        psycopg2 = { version = "^2.9", optional = true }
-        mysqlclient = { version = "^1.3", optional = true }
-
-        [tool.poetry.group.dev.dependencies]
-        fastapi = {version="^0.92.0", extras=["all"]}
-
-        [tool.poetry.extras]
-        mysql = ["mysqlclient"]
-        pgsql = ["psycopg2"]
-        databases = ["mysqlclient", "psycopg2"]
-
-    So we have to support two value types: str (for mandatory) and dict[str, str] (for optional and extra).
-
-    Returns the modified "out: set[Requirement]" parameter.
-    """
-    # should be poetry dependency metadata
-    for key, v in value.items():
-        if key == "python":
-            continue
-        if isinstance(v, str):
-            # mandatory dependency
-            out.add(Requirement(f"{key}{str(convert_poetry_to_pep508(v))}"))
-        if isinstance(v, dict):
-            poetry_optional_requirements(out, key, v)
-            poetry_extra_requirements(out, key, v)
-            poetry_git_requirements(out, key, v)
-    return out
-
-
-def package_dependency_field(value: set[Requirement] | list[str] | dict[str, str]) -> set[Requirement]:
-    """
-    Callback to convert a package dependency specifiers into a set of package dependency fields.
-    list[str] values should be from the project table and already in pep508 format.
-    dict[str, str] should be from the [tool.poetry] table and need conversion to pep508 format.
-
-    returns set of pep508 dependency fields.
-    """
-    out: set[Requirement] = set()
-
-    if isinstance(value, list):
-        project_dependency_fields(out, value)
-
-    if isinstance(value, dict):
-        poetry_dependency_fields(out, value)
-    return out
+valid_markers_set = {
+    "os_name",  # posix, java
+    "sys_platform",  # linux, linux2, darwin, java1.8.0_51
+    "platform_machine",  # x86_64
+    "platform_python_implementation",  # CPython, Jython
+    "platform_release",  # 3.14.1-x86_64-linode39, 14.5.0, 1.8.0_51
+    "platform_system",  # Linux, Windows, Java
+    "platform_version",  # #1 SMP Fri Apr 25 13:07:35 EDT 2014 Java HotSpot(TM) 64-Bit Server VM, ...
+    "python_version",  # 3.4, 2.7
+    "python_full_version",  # 3.4.0, 3.5.0b1
+    "implementation_name",  # cpython
+    "implementation_version",  # 3.4.0, 3.5.0b1
+}
 
 
 def string_field(value: str) -> str:
@@ -391,22 +114,6 @@ def clean_value(output_value_string: str) -> str:
     return output_value_string.replace("set()", "{ }").replace("'", '"')
 
 
-def format_dependencies(dependencies: list[str] | dict[str, str] | set[Requirement]) -> str:
-    """
-    Format both project and poetry dependencies.
-    """
-    str_dependencies: list[str]
-    if isinstance(dependencies, set):
-        str_dependencies = [str(dep) for dep in dependencies]
-    elif isinstance(dependencies, dict):
-        str_dependencies = [
-            str(Requirement(dep + convert_poetry_to_pep508(dependencies[dep]))) for dep in dependencies
-        ]
-    else:
-        str_dependencies = [str(Requirement(dep)) for dep in dependencies]
-    return clean_value(pformat(sorted(str_dependencies)))
-
-
 def format_diff_values(
     project_data: str | list[str] | dict[str, Any] | set[Any], poetry_data: str | list[str] | dict[str, Any] | set[Any]
 ) -> str:
@@ -427,54 +134,6 @@ def format_diff_values(
         a = {str(data) for data in project_data}
         b = {str(data) for data in poetry_data}
         return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
-
-
-def format_diff_dependencies(project_data, poetry_data) -> str:
-    """
-    Format the differences between project and poetry dependencies.
-    """
-    a: set = {str(Requirement(dep)) for dep in project_data}
-    b: set = {str(req) for req in package_dependency_field(poetry_data)}
-    return clean_value(f"{pformat(sorted(list(a.difference(b))))}\nvs\n{pformat(sorted(list(b.difference(a))))}")
-
-
-def check_asymmetric_fields(
-    callback: Callable[[Any], str | set[str] | set[Requirement]], field_dict: dict, toml_data: dict[str, Any]
-) -> int:
-    """
-    Check fields that differ in table names between project and tool.poetry.
-    Project uses: optional-dependencies.{key} while poetry uses: group.{key}.dependencies
-    Returns the number of problems detected.
-    """
-
-    number_of_problems: int = 0
-
-    # project_data and poetry_data neet to point to the final field's value
-    # Example: for field_dict = field_dict = {'poetry': ['group', 'dev', 'dependencies']}
-    # poetry_data will end up pointing to toml_data['tool.poetry.group.dev.dependencies']
-    project_data: dict[str, Any] = toml_data["project"]
-    poetry_data: dict[str, Any] = toml_data["tool"]["poetry"]
-
-    for name in field_dict["project"]:
-        project_data = project_data.get(name, {})
-
-    for name in field_dict["poetry"]:
-        poetry_data = poetry_data.get(name, {})
-
-    # build the name strings used in logging
-    project_name = ".".join(field_dict["project"])
-    poetry_name = ".".join(field_dict["poetry"])
-
-    # check the field's values
-    if callback(project_data) != callback(poetry_data):
-        logger.error(
-            f"[project.{project_name}] does not match poetry.{poetry_name}\n"
-            f"Differences:\n{format_diff_dependencies(project_data, poetry_data)}"
-        )
-        logger.debug(f"[project] {project_name}:\n{format_dependencies(project_data)}")
-        logger.debug(f"[poetry] {poetry_name}:\n{format_dependencies(package_dependency_field(poetry_data))}")
-        number_of_problems += 1
-    return number_of_problems
 
 
 def check_python_version(toml_data: dict[str, Any]) -> int:
@@ -519,6 +178,115 @@ def check_python_version(toml_data: dict[str, Any]) -> int:
     return number_of_problems
 
 
+def to_project_requirements(dependency_list: list[str]) -> set[Requirement]:
+    return {Requirement(dep) for dep in dependency_list}
+
+
+def list_to_requirement(key: str, value: list[str | dict[str, str]]) -> Requirement | None:
+    return None
+
+
+def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+    """
+    flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
+    numpy = { git = "https://github.com/numpy/numpy.git", tag = "v0.13.2" }
+    subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
+    requests3 = { git = "git@github.com:requests/requests.git" }
+    """
+    # Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
+    # Note order is important because we will check if vcs is in the url (i.e. substring search)
+    vcs_schemes = {
+        "git": ["git+file", "git+https", "git+ssh", "git+http", "git+git", "git"],
+        "hg": ["hg+file", "hg+https", "hg+ssh", "hg+http", "hg+static-http"],
+        "svn": ["svn+file", "svn+https", "svn+ssh", "svn+http", "svn+svn", "svn"],
+        "bzr": ["bzr+https", "bzr+ssh", "bzr+sftp", "bzr+lp", "bzr+http", "bzr+ftp"],
+    }
+
+    out: set[Requirement] = set()
+
+    for vcs in vcs_schemes:
+        if vcs in package_value:
+            value = package_value[vcs]
+            if vcs == "git":
+                value = re.sub(r"^(git@|https://)", r"git+https://", value)
+            url = f"{package_name}@ {value}"
+            if "rev" in package_value:
+                url = f"{url}@{package_value['rev']}"
+            elif "branch" in package_value:
+                url = f"{url}#{package_value['branch']}"
+            elif "tag" in package_value:
+                url = f"{url}@{package_value['tag']}"
+            out.add(Requirement(url))
+            break
+    else:
+        if "path" in package_value:
+            out.add(Requirement(f"{package_name}@ {package_value['path']}"))
+        elif "source" in package_value:
+            out.add(Requirement(f"{package_name}@ {package_value['source']}"))
+        elif "version" in package_value:
+            url = f"{package_name} {convert_poetry_to_pep508(package_value['version'])}"
+            if "extras" in package_value:
+                value = str(package_value["extras"]).replace("'", "")
+                url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
+            if "python" in package_value:
+                ver = convert_poetry_to_pep508(package_value["python"], max_bounds=False, quotes=True)
+                url = f"{url};python_version{ver}"
+            markers = set(
+                [
+                    mark + str(package_value[mark])
+                    for mark in package_value
+                    if mark not in ["version", "python", "extras"]
+                ]
+            )
+            extra_markers = markers.intersection(valid_markers_set)
+            if extra_markers:
+                url = f"{url}; {'; '.join(extra_markers)}"
+            out.add(Requirement(url))
+
+    if not out:
+        logger.warning(f"unable to parse dependency: {package_name} @ {package_value}")
+    return out
+
+
+def to_poetry_requirements(dependencies: dict[str, str | dict[str, str] | list[dict[str, str]]]) -> set[Requirement]:
+    out: set[Requirement] = set()
+    for key, value in dependencies.items():
+        if key == "python":
+            continue
+        if isinstance(value, str):
+            out.add(Requirement(f"{key}{convert_poetry_to_pep508(value)}"))
+        elif isinstance(value, list):
+            req_list = list_to_requirement(key, value)
+            if req_list:
+                out.add(req_list)
+        elif isinstance(value, dict):
+            out = out.union(dict_to_requirement(key, value))
+    return out
+
+
+def format_requirement_set(requirements: set[Requirement]) -> str:
+    return pformat(sorted([str(r) for r in requirements]))
+
+
+def check_dependencies(key: str | None, project_dependencies: list[str], poetry_dependencies: dict[str, Any]) -> int:
+    number_of_problems: int = 0
+    project_requirements: set[Requirement] = to_project_requirements(project_dependencies)
+    poetry_requirements: set[Requirement] = to_poetry_requirements(poetry_dependencies)
+    logger.debug(f"project_requirements: {format_requirement_set(project_requirements)}")
+    logger.debug(f"poetry_requirements: {format_requirement_set(poetry_requirements)}")
+    differing_requirements = project_requirements.symmetric_difference(poetry_requirements)
+    if len(differing_requirements) > 0:
+        number_of_problems += 1
+        project_to_poetry_diff = project_requirements.difference(poetry_requirements)
+        poetry_to_project_diff = poetry_requirements.difference(project_requirements)
+        key_str = f'"{key}" ' if key else ""
+        if project_to_poetry_diff:
+            logger.info(f"{key_str}requirements only in project:\n{format_requirement_set(project_to_poetry_diff)}")
+        if poetry_to_project_diff:
+            logger.info(f"{key_str}requirements only in poetry:\n{format_requirement_set(poetry_to_project_diff)}")
+    return number_of_problems
+
+
 def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
     """
     Check fields that should be identical between [project] and [tool.poetry]
@@ -527,58 +295,58 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
 
     number_of_problems: int = 0
 
-    # group field names by the TOML type of their values
-
-    string_field_names: list[str] = ["name", "description", "readme", "version", "scripts", "urls"]
-    set_field_names: list[str] = ["keywords", "classifiers"]
-    author_field_names: list[str] = ["authors", "maintainers"]
-    dependency_field_names: list[str] = ["dependencies"]
-    optional_dependency_keys: set[str] = set(toml_data["tool"]["poetry"]["group"]) | set(
-        toml_data["project"]["optional-dependencies"]
-    )
-
-    # gather all the field names we check, so we can later find the unchecked field names
-    checked_field_names: list[str] = (
-        string_field_names
-        + set_field_names
-        + author_field_names
-        + dependency_field_names
-        + ["optional-dependencies", "group"]
-    )
-
-    # check the field values when the field names are the same in project and tool.poetry tables
-    number_of_problems += check_fields(string_field, string_field_names, toml_data)
-    number_of_problems += check_fields(set_field, set_field_names, toml_data)
-    number_of_problems += check_fields(author_field, author_field_names, toml_data)
-    number_of_problems += check_python_version(toml_data)
-    number_of_field_problems: int = check_fields(package_dependency_field, dependency_field_names, toml_data)
-    if number_of_field_problems > 0:
-        number_of_problems += number_of_field_problems
-        logger.debug("project dependency value(s):\n" + format_dependencies(toml_data["project"]["dependencies"]))
-        logger.debug(
-            "poetry dependency value(s) formatted as pep508:\n"
-            + format_dependencies(toml_data["tool"]["poetry"]["dependencies"])
+    try:
+        # group field names by the TOML type of their values
+        string_field_names: list[str] = ["name", "description", "readme", "version", "scripts", "urls"]
+        set_field_names: list[str] = ["keywords", "classifiers"]
+        author_field_names: list[str] = ["authors", "maintainers"]
+        dependency_field_names: list[str] = ["dependencies"]
+        optional_dependency_keys: set[str] = set(toml_data["tool"]["poetry"]["group"]) | set(
+            toml_data["project"]["optional-dependencies"]
         )
 
-    # check the field values when the field names differ between project and tool.poetry tables
-    key: str
-    for key in optional_dependency_keys:
-        field_dict: dict[str, list[str]] = {
-            "project": ["optional-dependencies", key],
-            "poetry": ["group", key, "dependencies"],
-        }
-        number_of_problems += check_asymmetric_fields(package_dependency_field, field_dict, toml_data)
+        # gather all the field names we check, so we can later find the unchecked field names
+        checked_field_names: list[str] = (
+            string_field_names
+            + set_field_names
+            + author_field_names
+            + dependency_field_names
+            + ["optional-dependencies", "group"]
+        )
 
-    # warn about fields not checked
-    logger.warning(f"Fields not checked in [project]:  {sorted(toml_data['project'].keys() - checked_field_names)}")
-    logger.warning(
-        f"Fields not checked in [tool.poetry]:  {sorted(toml_data['tool']['poetry'].keys() - checked_field_names)}"
-    )
-    logger.info(
-        "Note that the license tables have completely different formats between\n"
-        "[project] (takes either a file or a text attribute of the actual license and "
-        "[tool.poetry] (takes the name of the license), so both must be manually set."
-    )
+        # check the field values when the field names are the same in project and tool.poetry tables
+        number_of_problems += check_fields(string_field, string_field_names, toml_data)
+        number_of_problems += check_fields(set_field, set_field_names, toml_data)
+        number_of_problems += check_fields(author_field, author_field_names, toml_data)
+        number_of_problems += check_python_version(toml_data)
+        number_of_problems += check_dependencies(
+            None, toml_data["project"]["dependencies"], toml_data["tool"]["poetry"]["dependencies"]
+        )
+
+        # check the field values when the field names differ between project and tool.poetry tables
+        key: str
+        for key in optional_dependency_keys:
+            number_of_problems += check_dependencies(
+                key,
+                toml_data["project"]["optional-dependencies"][key],
+                toml_data["tool"]["poetry"]["group"][key]["dependencies"],
+            )
+
+        # warn about fields not checked
+        logger.warning(
+            f"Fields not checked in [project]:  {sorted(toml_data['project'].keys() - checked_field_names)}"
+        )
+        logger.warning(
+            f"Fields not checked in [tool.poetry]:  {sorted(toml_data['tool']['poetry'].keys() - checked_field_names)}"
+        )
+        logger.info(
+            "Note that the license tables have completely different formats between\n"
+            "[project] (takes either a file or a text attribute of the actual license and "
+            "[tool.poetry] (takes the name of the license), so both must be manually set."
+        )
+    except Exception:  # NOQA - Intentionally want to capture any exception here
+        logger.exception("Problem checking pyproject.toml:")
+        number_of_problems += 1
     return number_of_problems
 
 
@@ -586,6 +354,7 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     """read the pyproject.toml file then cross validate the [project] and [tool.poetry] sections."""
     number_of_problems: int = 0
     try:
+        logger.info(f"Reading pyproject.toml file: {project_filename}")
         with open(project_filename, "r", encoding="utf-8") as f:
             number_of_problems += check_pyproject_toml(toml_data=tomllib.loads(f.read()))
     except FileNotFoundError:
@@ -599,28 +368,3 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
         number_of_problems = 1  # one error
     logger.info(f"Validate pyproject.toml file: {project_filename} => {number_of_problems} problems detected.")
     return number_of_problems
-
-
-def main(args: list[str] = None) -> None:  # pragma: no cover
-    """main function
-    If 1 or more arguments are given, they will be passed to `validate_pyproject_toml_file`.
-    Else, `validate_pyproject_toml_file` will be called with `$CWD/pyproject.toml`.
-    """
-    number_of_problems: int = 0
-    logger.remove(None)
-    logger.add(sys.stderr, level="DEBUG", format=LOGURU_SHORT_FORMAT)
-    if not args:
-        args: list[str] = sys.argv[1:]
-    if len(args) == 0:
-        args.append(str(Path.cwd() / "pyproject.toml"))
-    for arg in args:
-        if "--version" == arg:
-            print(f"{__project_name__}: {__version__}")
-        else:
-            logger.info(f'Checking: "{arg}"')
-            number_of_problems += validate_pyproject_toml_file(Path(arg))
-    exit(number_of_problems)
-
-
-if __name__ == "__main__":
-    main(args=sys.argv[1:])  # pragma: no cover

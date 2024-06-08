@@ -9,7 +9,7 @@ name = "check_pyproject"
 # TOML type: string
 # The version of the project, as defined in the Version specifier specification.
 # Users SHOULD prefer to specify already-normalized versions
-version = "0.1.0"
+version = "0.1.1"
 
 # TOML type: string
 # The summary description of the project in one line. Tools MAY error if this includes multiple lines.
@@ -94,6 +94,7 @@ dynamic = []
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
   "packaging>=24.0.0, <25.0.0",
+  "usingversion>=0.1.2, <0.2.0"
 ]
 
 # TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
@@ -181,7 +182,7 @@ name = "check_pyproject"
 
 # The version of the package. Required in package mode
 # This should be a valid PEP 440 string.
-version = "0.1.0"
+version = "0.1.1"
 
 # A short description of the package. Required in package mode
 description = "This tool facilitates syncing of the project and the tool.poetry tables in your pyproject.toml."
@@ -256,6 +257,7 @@ include = [
 python = "^3.10"
 loguru = "^0.7.2"
 packaging = "^24.0"
+usingversion = "^0.1.2"
 
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]

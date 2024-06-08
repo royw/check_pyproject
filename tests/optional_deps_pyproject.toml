@@ -125,7 +125,8 @@ dev = [
   "safety>=3.2.0, <4.0.0",
   "parsley>=1.3.0, <2.0.0",
   "versio>=0.5.0, <0.6.0",
-  "check-pyproject@git+https://github.com:royw/check_pyproject.git"
+  "check-pyproject@git+https://github.com:royw/check_pyproject.git",
+  'validate-pyproject[all]<0.18.0,>=0.17.0'
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",

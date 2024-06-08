@@ -94,7 +94,20 @@ dynamic = []
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
   "pathvalidate>=3.2.0, <4.0.0",
-  "usingversion>=0.1.2, <0.2.0"
+  "usingversion>=0.1.2, <0.2.0",
+  'gunicorn[gevent]<21.0.0,>=20.1.0',
+  'my-cool-package@ foo',
+  'my-package1@ ../my-package/',
+  'my-package2@ ../my-package/dist/my-package-0.1.0.tar.gz',
+  'numpy@ git+https://github.com/numpy/numpy.git@v0.13.2',
+  'pathlib2<3.0.0,>=2.2.0; python_version >= "3.2.0"',
+  'pathlib2a<3.0.0,>=2.2.0',
+  'subdir_package@ git+https://github.com/myorg/mypackage_with_subdirs.git',
+  'tomli<3.0.0,>=2.0.1; python_version < "3.11.0"',
+  'flask@ git+https://github.com/pallets/flask.git@38eb5d3b',
+  'requests3@ git+https://github.com/requests/requests.git',
+  'requests2@ git+https://github.com/kennethreitz/requests.git#next',
+  'requests@ git+https://github.com/requests/requests.git'
 ]
 
 # TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
@@ -241,6 +254,45 @@ python = "^3.11"
 loguru = "^0.7.2"
 usingversion = "^0.1.2"
 pathvalidate = "^3.2.0"
+
+# git dependencies
+requests = { git = "https://github.com/requests/requests.git" }
+# Get the latest revision on the branch named "next"
+requests2 = { git = "https://github.com/kennethreitz/requests.git", branch = "next" }
+# Get a revision by its commit hash
+flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
+# Get a revision by its tag
+numpy = { git = "https://github.com/numpy/numpy.git", tag = "v0.13.2" }
+# Install a package named `subdir_package` from a folder called `subdir` within the repository
+subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
+requests3 = { git = "git@github.com/requests/requests.git" }
+my-cool-package = { version = "*", source = "foo" }
+tomli = { version = "^2.0.1", python = "<3.11" }
+pathlib2 = { version = "^2.2", python = "^3.2" }
+pathlib2a = { version = "^2.2", markers = "python_version <= '3.4' or sys_platform == 'win32'" }
+foo1 = [
+    {version = "<=1.9", python = ">=3.6,<3.8"},
+    {version = "^2.0", python = ">=3.8"}
+]
+foo2 = [
+    { platform = "darwin", url = "https://example.com/example-1.0-py3-none-any.whl" },
+    { platform = "linux", version = "^1.0" },
+]
+foo3 = [
+    { platform = "darwin", url = "https://example.com/foo-1.0.0-py3-none-macosx_11_0_arm64.whl" },
+    { platform = "linux", version = "^1.0", source = "pypi" },
+]
+# black = {version = "19.10b0", allow-prereleases = true, python = "^3.7", markers = "platform_python_implementation == 'CPython'"}
+
+# extras dependencies
+gunicorn = { version = "^20.1", extras = ["gevent"] }
+
+# path dependencies
+# directory
+my-package1 = { path = "../my-package/", develop = false }
+
+# file
+my-package2 = { path = "../my-package/dist/my-package-0.1.0.tar.gz" }
 
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]
