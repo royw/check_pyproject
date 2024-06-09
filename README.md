@@ -81,6 +81,8 @@ Should pass this time.
 - The [Python Packaging User Guide](https://packaging.python.org/en/latest)
 - The [pyproject.toml specification](https://pypi.python.org/pypi/pyproject.toml)
 - The [Poetry pyproject.toml metadata](https://python-poetry.org/docs/pyproject)
+- [pip documentation](https://pip.pypa.io/en/stable/)
+- [Setuptools](https://setuptools.pypa.io/)
 
 ### Build tools
 - [loguru](https://loguru.readthedocs.io) improved logging.
