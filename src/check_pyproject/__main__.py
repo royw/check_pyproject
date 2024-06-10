@@ -1,3 +1,5 @@
+""" main entry point for application
+"""
 import argparse
 import sys
 from collections.abc import Sequence

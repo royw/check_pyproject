@@ -29,39 +29,34 @@ class LoggerControl:
         "CRITICAL",
     )  # cannot select NOTSET
 
-    _help: MappingProxyType[str, str] = MappingProxyType(
-        {
-            "output_group": "",
-            "loglevel": f'Set verbosity level to one of the following: {VALID_LOG_LEVELS} (default: "INFO").',
-            "debug": 'Output all messages (debug, info, warning, error, & critical).  Overrides "--loglevel".',
-            "quiet": 'Only output error and critical messages.  Overrides "--loglevel" and "--debug".',
-            "logfile": 'File to log messages enabled by "--loglevel" to.',
-        }
-    )
-
+    # noinspection PyMethodMayBeStatic
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Use argparse commands to add arguments to the given parser."""
 
-        output_group = parser.add_argument_group(title="Logging Options", description=self._help["output_group"])
+        output_group = parser.add_argument_group(title="Logging Options", description="output_group")
 
         output_group.add_argument(
             "--loglevel",
             dest="loglevel",
             default="INFO",
             choices=LoggerControl.VALID_LOG_LEVELS,
-            help=self._help["loglevel"],
+            help=f'Set verbosity level to one of the following: {LoggerControl.VALID_LOG_LEVELS} (default: "INFO").',
         )
 
-        output_group.add_argument("--debug", dest="debug", action="store_true", help=self._help["debug"])
+        output_group.add_argument("--debug", dest="debug", action="store_true",
+                                  help='Output all messages (debug, info, warning, error, & critical).  '
+                                       'Overrides "--loglevel".')
 
-        output_group.add_argument("--quiet", dest="quiet", action="store_true", help=self._help["quiet"])
+        output_group.add_argument("--quiet", dest="quiet", action="store_true",
+                                  help='Only output error and critical messages.  Overrides "--loglevel" '
+                                       'and "--debug".')
 
         output_group.add_argument(
             "--logfile",
             dest="logfile",
             action="store",
             type=validate_filepath_arg,
-            help=self._help["logfile"],
+            help='File to log messages enabled by "--loglevel" to.',
         )
 
     @staticmethod
