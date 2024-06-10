@@ -1,8 +1,10 @@
 import argparse
 import importlib
-
+import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
+from types import MappingProxyType
+
 from loguru import logger
 
 
@@ -10,14 +12,17 @@ from loguru import logger
 class InfoControl:
     """Add information control (--version, --longhelp) argument support to a CLI application."""
 
-    DEFAULT_VERSION = "Unknown"
+    DEFAULT_VERSION: str = "Unknown"
 
     app_package: str | None = None
-    _help = {
-        "info_group": "",
-        "version": "Show the application's version.  (default: %(default)s)",
-        "longhelp": "Verbose help message.  (default: %(default)s)",
-    }
+
+    _help: MappingProxyType[str, str] = MappingProxyType(
+        {
+            "info_group": "",
+            "version": "Show the application's version.  (default: %(default)s)",
+            "longhelp": "Verbose help message.  (default: %(default)s)",
+        }
+    )
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
         """Use argparse commands to add arguments to the given parser."""
@@ -44,12 +49,12 @@ class InfoControl:
         if settings.longhelp and self.app_package:
             app_module = importlib.import_module(self.app_package)
             if app_module.__doc__:
-                print(app_module.__doc__)
-                exit(0)
+                logger.info(app_module.__doc__)
+                sys.exit(0)
 
         if settings.version:
-            print("Version %s" % self._load_version())
-            exit(0)
+            logger.info(f"Version {self._load_version()}")
+            sys.exit(0)
 
     def _load_version(self) -> str:
         r"""

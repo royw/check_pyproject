@@ -20,33 +20,36 @@ This base class adds the following features to ArgumentParser:
 
 """
 
-import os
 import argparse
+import contextlib
+import os
 import sys
-
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from configparser import ConfigParser, NoSectionError
-from typing import Sequence, Tuple
 
 from check_pyproject.clibones.info_control import InfoControl
 from check_pyproject.clibones.logger_control import LoggerControl
 
 
-class ApplicationSettings(object):
+class ApplicationSettings(ABC):
     """
     Usage::
 
         class MySettings(ApplicationSettings):
             HELP = {
-                'foo': 'the foo option',
-                'bar': 'the bar option',
+                "foo": "the foo option",
+                "bar": "the bar option",
             }
 
             def __init__(self):
-                super(MySettings, self).__init__('App Name', 'app_package', 'app_description', ['APP Section'])
+                super(MySettings, self).__init__(
+                    "App Name", "app_package", "app_description", ["APP Section"]
+                )
 
             def add_arguments(parser):
-                parser.add_argument('--foo', action='store_true', help=HELP['foo'])
-                parser.add_argument('--bar', action='store_true', help=HELP['bar'])
+                parser.add_argument("--foo", action="store_true", help=HELP["foo"])
+                parser.add_argument("--bar", action="store_true", help=HELP["bar"])
 
     Context Manager Usage::
 
@@ -92,7 +95,7 @@ class ApplicationSettings(object):
 
     def _parse_config_files(
         self, args: Sequence[str] | None = None
-    ) -> Tuple[
+    ) -> tuple[
         argparse.ArgumentParser | None,
         list[str],
         dict,
@@ -112,16 +115,14 @@ class ApplicationSettings(object):
         config.read(config_files)
         defaults = {}
         for section in self.__config_sections:
-            try:
+            with contextlib.suppress(NoSectionError):
                 defaults.update(dict(config.items(section)))
-            except NoSectionError:
-                pass
 
         return conf_parser, config_files, defaults, remaining_argv
 
     def parse(
         self, args: Sequence[str] | None = None
-    ) -> Tuple[argparse.ArgumentParser, argparse.Namespace, list[str]]:
+    ) -> tuple[argparse.ArgumentParser, argparse.Namespace, list[str]]:
         """
         Perform the parsing of the optional config files and the command line arguments.
 
@@ -130,7 +131,7 @@ class ApplicationSettings(object):
 
         # parse any config files
         conf_parser, config_files, defaults, remaining_argv = self._parse_config_files(args=args)
-        parent_parsers: Sequence = [conf_parser] + self.add_parent_parsers()
+        parent_parsers: Sequence = [conf_parser, *self.add_parent_parsers()]
 
         parser = argparse.ArgumentParser(self.__app_name, parents=parent_parsers, description=self.__app_description)
 
@@ -161,7 +162,7 @@ class ApplicationSettings(object):
         conf_name: str = os.path.expanduser(f"~/.local/{self.__app_package}.conf")
         return [rc_name, conf_name]
 
-    # noinspection PyMethodMayBeStatic
+    @abstractmethod
     def add_parent_parsers(self) -> list[argparse.ArgumentParser]:
         """
         This is where you should add any parent parsers for the main parser.
@@ -170,7 +171,7 @@ class ApplicationSettings(object):
         """
         return []
 
-    # noinspection PyUnusedLocal
+    @abstractmethod
     def add_arguments(self, parser: argparse.ArgumentParser, defaults: dict[str, str]) -> None:
         """
         This is where you should add arguments to the parser.
@@ -182,7 +183,7 @@ class ApplicationSettings(object):
         """
         return
 
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    @abstractmethod
     def validate_arguments(self, settings: argparse.Namespace, remaining_argv: list[str]) -> list[str]:
         """
         This provides a hook for validating the settings after the parsing is completed.
@@ -218,7 +219,6 @@ class ApplicationSettings(object):
         """
         context manager exit
         """
-        pass
 
     def help(self) -> int:
         """

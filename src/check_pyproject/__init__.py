@@ -1,6 +1,6 @@
 from usingversion import getattr_with_version
 
-__doc__ = """# Check PyProject
+"""# Check PyProject
 
 Check that [project] and [tool.poetry] tables are in-sync in the `pyproject.toml` file.
 

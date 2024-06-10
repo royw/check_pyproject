@@ -14,13 +14,13 @@ tasks:
   lint:
     desc: Perform static code analysis
     cmds:
-      - poetry run ruff check src tests
+      - poetry run ruff check --config pyproject.toml --fix src tests
       - poetry run fawltydeps --detailed 
 
   format:
     desc: Check and reformat the code to a coding standard
     cmds:
-      - poetry run ruff format src tests
+      - poetry run ruff format -config pyproject.toml src tests
 
   check:
     desc: Run the raw project script on the project's pyproject.toml file.

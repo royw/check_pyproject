@@ -1,14 +1,13 @@
 import argparse
 import sys
+from collections.abc import Sequence
+from pathlib import Path
 
 from loguru import logger
-from pathlib import Path
-from typing import List, Sequence, Optional
-
 from pathvalidate.argparse import validate_filepath_arg
 
-from check_pyproject.clibones.application_settings import ApplicationSettings
 from check_pyproject.check_pyproject_toml import validate_pyproject_toml_file
+from check_pyproject.clibones.application_settings import ApplicationSettings
 
 
 class Settings(ApplicationSettings):
@@ -26,14 +25,17 @@ class Settings(ApplicationSettings):
             error(str(ex))
             exit(1)
     """
+
     __project_name: str = "Check Pyproject"
     """The name of the project"""
 
     __project_package: str = "check_pyproject"
     """The name of the package this settings belongs to. """
 
-    __project_description: str = (f"{__project_name} checks that overlapping metadata, between [project] "
-                                  f" and [tool.poetry] tables, is roughly) in-sync.")
+    __project_description: str = (
+        f"{__project_name} checks that overlapping metadata, between [project] "
+        f" and [tool.poetry] tables, is roughly) in-sync."
+    )
     """A short description of the application."""
 
     def __init__(self, args: Sequence[str] | None = None) -> None:
@@ -54,7 +56,7 @@ class Settings(ApplicationSettings):
         """
         return []
 
-    def add_arguments(self, parser: argparse.ArgumentParser, defaults: dict[str, str]) -> None:
+    def add_arguments(self, parser: argparse.ArgumentParser, defaults: dict[str, str]) -> None:  # noqa: ARG002
         """This is where you should add arguments to the parser.
 
         To add application arguments, you should override this method.
@@ -69,22 +71,20 @@ class Settings(ApplicationSettings):
             type=validate_filepath_arg,
             nargs="*",
             default=["pyproject.toml"],
-            help=f"The pyproject.toml files to check",
+            help="The pyproject.toml files to check",
         )
-        return
 
-    def validate_arguments(self, settings: argparse.Namespace, remaining_argv: List[str]) -> list[str]:
+    def validate_arguments(self, settings: argparse.Namespace, remaining_argv: list[str]) -> list[str]:  # noqa: ARG002
         """This provides a hook for validating the settings after the parsing is completed.
 
         :param settings: the settings object returned by ArgumentParser.parse_args()
         :param remaining_argv: the remaining argv after the parsing is completed.
         :return: a list of error messages or an empty list
         """
-        result = []
-        return result
+        return []
 
 
-def main(args: Optional[list[str]] = None) -> int:
+def main(args: list[str] | None = None) -> int:
     """The command line applications main function."""
     number_of_problems: int = 0
     with Settings(args=args) as settings:

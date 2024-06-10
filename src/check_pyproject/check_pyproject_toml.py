@@ -16,7 +16,7 @@ from loguru import logger
 from packaging.requirements import Requirement
 
 from check_pyproject.poetry_requirement import (
-    convert_poetry_to_pep508,
+    convert_poetry_specifier_to_pep508,
 )
 
 # valid dependency markers
@@ -136,7 +136,7 @@ def format_diff_values(
         a = {str(data) for data in project_data}
         b = {str(data) for data in poetry_data}
         return set_vs_set(a.difference(b), b.difference(a))
-    raise TypeError(f"Unexpected type {type(project_data)}")
+    raise TypeError("Unexpected type " + type(project_data))
 
 
 def check_python_version(toml_data: dict[str, Any]) -> int:
@@ -156,8 +156,10 @@ def check_python_version(toml_data: dict[str, Any]) -> int:
     if "requires-python" in project_data:
         if "python" in poetry_data["dependencies"]:
             # python is specified in both places, so verify their versions are the same
-            project_python_version = convert_poetry_to_pep508(project_data["requires-python"])
-            poetry_python_version = convert_poetry_to_pep508(poetry_data["dependencies"]["python"], max_bounds=False)
+            project_python_version = convert_poetry_specifier_to_pep508(project_data["requires-python"])
+            poetry_python_version = convert_poetry_specifier_to_pep508(
+                poetry_data["dependencies"]["python"], max_bounds=False
+            )
             if project_python_version != poetry_python_version:
                 logger.error(
                     f"project.requires-python ({project_python_version}) "
@@ -171,7 +173,7 @@ def check_python_version(toml_data: dict[str, Any]) -> int:
             )
             number_of_problems += 1
     elif "python" in poetry_data["dependencies"]:
-        poetry_python_version = convert_poetry_to_pep508(poetry_data["dependencies"]["python"])
+        poetry_python_version = convert_poetry_specifier_to_pep508(poetry_data["dependencies"]["python"])
         logger.error(
             f"tool.poetry.dependencies.python is {poetry_python_version} but project.requires-python is missing."
         )
@@ -239,7 +241,7 @@ def build_svn_url(package_name: str, package_value: dict[str, str], value: str) 
     if "rev" in package_value:
         url = f"{url}@{{{package_value['rev']}}}"
     elif "branch" in package_value:
-        # TODO ??? guessing on this syntax
+        # TODO: ??? guessing on this syntax
         url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
@@ -258,7 +260,7 @@ def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) 
     if "rev" in package_value:
         url = f"{url}@{package_value['rev']}"
     elif "branch" in package_value:
-        # TODO ??? guessing on this syntax
+        # TODO: ??? guessing on this syntax
         url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
@@ -312,17 +314,14 @@ def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str
     """add markers to the url"""
     if "extras" in package_value:
         value = str(package_value["extras"]).replace("'", "")
-        url = f"{package_name}{value} {convert_poetry_to_pep508(package_value['version'])}"
+        url = f"{package_name}{value} {convert_poetry_specifier_to_pep508(package_value['version'])}"
     if "python" in package_value:
-        ver = convert_poetry_to_pep508(package_value["python"], max_bounds=False, quotes=True)
+        ver = convert_poetry_specifier_to_pep508(package_value["python"], max_bounds=False, quotes=True)
         url = f"{url};python_version{ver}"
     if "platform" in package_value:
         url = f"{url};sys_platform=='{package_value['platform']}'"
-    # if "source" in package_value:
-    #     url = f"{url};source={package_value['source']}"
 
-    url = add_leftover_markers_to_url(url, package_value, separator)
-    return url
+    return add_leftover_markers_to_url(url, package_value, separator)
 
 
 def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
@@ -332,7 +331,7 @@ def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requ
     if "path" in package_value:
         out.add(Requirement(f"{package_name}@ {package_value['path']}"))
     elif "version" in package_value:
-        url = f"{package_name} {convert_poetry_to_pep508(package_value['version'])}"
+        url = f"{package_name} {convert_poetry_specifier_to_pep508(package_value['version'])}"
         url = add_markers_to_url(url, package_name, package_value)
         out.add(Requirement(url))
     elif "url" in package_value:
@@ -389,7 +388,7 @@ def list_to_requirement(key: str, values: list[str | dict[str, str]]) -> set[Req
     out: set[Requirement] = set()
     for value in values:
         if isinstance(value, str):
-            out.add(Requirement(f"{key}{convert_poetry_to_pep508(value)}"))
+            out.add(Requirement(f"{key}{convert_poetry_specifier_to_pep508(value)}"))
         if isinstance(value, dict):
             out = out.union(dict_to_requirement(key, value))
     return out
@@ -409,7 +408,7 @@ def to_poetry_requirements(dependencies: dict[str, str | dict[str, str] | list[d
         if key == "python":
             continue
         if isinstance(value, str):
-            out.add(Requirement(f"{key}{convert_poetry_to_pep508(value)}"))
+            out.add(Requirement(f"{key}{convert_poetry_specifier_to_pep508(value)}"))
         elif isinstance(value, list):
             out = out.union(list_to_requirement(key, value))
         elif isinstance(value, dict):
@@ -439,8 +438,10 @@ def check_dependencies(key: str | None, project_dependencies: list[str], poetry_
         poetry_to_project_diff = poetry_requirements.difference(project_requirements)
         key_str = f'"{key}" ' if key else ""
         if project_to_poetry_diff or poetry_to_project_diff:
-            logger.info(f"Dependencies {key_str}Differences:\n"
-                        f"{format_diff_values(project_to_poetry_diff, poetry_to_project_diff)}")
+            logger.info(
+                f"Dependencies {key_str}Differences:\n"
+                f"{format_diff_values(project_to_poetry_diff, poetry_to_project_diff)}"
+            )
     return number_of_problems
 
 
