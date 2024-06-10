@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from pprint import pformat
 from typing import Any
 
 import tomllib
@@ -7,6 +8,7 @@ from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
+import check_pyproject.__main__
 from check_pyproject.check_pyproject_toml import (
     check_fields,
     convert_poetry_specifier_to_pep508,
@@ -172,3 +174,69 @@ def test_caret_requirement_to_pep508():
     assert str(SpecifierSet(">=1.2.3,<2.0.0")) == caret_requirement_to_pep508(
         "^1.2.3"[1:], max_bounds=True
     ), "^1.2.3 max_bounds=True"
+
+
+def test_main():
+    assert check_pyproject.__main__.main([str(Path(__file__).parent / "good_pyproject.toml")]) == 0
+    assert check_pyproject.__main__.main(["--version"]) == 0
+    assert check_pyproject.__main__.main(["--longhelp"]) == 0
+
+
+def test_hg_vcs():
+    dependencies = tomllib.loads("""
+    foo1 = {hg = "https://foohub.com/foo1/foo1.hg"}
+    foo2 = {hg = "https://foohub.com/foo2/foo2.hg", branch = "next"}
+    foo3 = {hg = "https://foohub.com/foo3/foo3.hg", rev = "38eb5d3b"}
+    foo4 = {hg = "https://foohub.com/foo4/foo4.hg", tag = "v0.13.2"}
+    foo5 = {hg = "https://foohub.com/foo5/foo5.hg", subdirectory = "subdir"}
+    """)
+    target_requirements = {
+        Requirement("foo1@ hg+https://foohub.com/foo1/foo1.hg"),
+        Requirement("foo2@ hg+https://foohub.com/foo2/foo2.hg@next"),
+        Requirement("foo3@ hg+https://foohub.com/foo3/foo3.hg@38eb5d3b"),
+        Requirement("foo4@ hg+https://foohub.com/foo4/foo4.hg@v0.13.2"),
+        Requirement("foo5@ hg+https://foohub.com/foo5/foo5.hg/subdir"),
+    }
+    requirements = to_poetry_requirements(dependencies)
+    diff = requirements.symmetric_difference(target_requirements)
+    assert len(diff) == 0, f"Hg Diff: {pformat(diff)}"
+
+
+def test_svn_vcs():
+    dependencies = tomllib.loads("""
+    foo1 = {svn = "https://foohub.com/foo1/foo1.svn"}
+    foo2 = {svn = "https://foohub.com/foo2/foo2.svn", branch = "next"}
+    foo3 = {svn = "https://foohub.com/foo3/foo3.svn", rev = "38eb5d3b"}
+    foo4 = {svn = "https://foohub.com/foo4/foo4.svn", tag = "v0.13.2"}
+    foo5 = {svn = "https://foohub.com/foo5/foo5.svn", subdirectory = "subdir"}
+    """)
+    target_requirements = {
+        Requirement("foo1@ svn+https://foohub.com/foo1/foo1.svn"),
+        Requirement("foo2@ svn+https://foohub.com/foo2/foo2.svn@next"),
+        Requirement("foo3@ svn+https://foohub.com/foo3/foo3.svn@38eb5d3b"),
+        Requirement("foo4@ svn+https://foohub.com/foo4/foo4.svn@v0.13.2"),
+        Requirement("foo5@ svn+https://foohub.com/foo5/foo5.svn/subdir"),
+    }
+    requirements = to_poetry_requirements(dependencies)
+    diff = requirements.symmetric_difference(target_requirements)
+    assert len(diff) == 0, f"svn Diff: {pformat(diff)}"
+
+
+def test_bzr_vcs():
+    dependencies = tomllib.loads("""
+    foo1 = {bzr = "https://foohub.com/foo1/foo1.bzr"}
+    foo2 = {bzr = "https://foohub.com/foo2/foo2.bzr", branch = "next"}
+    foo3 = {bzr = "https://foohub.com/foo3/foo3.bzr", rev = "38eb5d3b"}
+    foo4 = {bzr = "https://foohub.com/foo4/foo4.bzr", tag = "v0.13.2"}
+    foo5 = {bzr = "https://foohub.com/foo5/foo5.bzr", subdirectory = "subdir"}
+    """)
+    target_requirements = {
+        Requirement("foo1@ bzr+https://foohub.com/foo1/foo1.bzr"),
+        Requirement("foo2@ bzr+https://foohub.com/foo2/foo2.bzr@next"),
+        Requirement("foo3@ bzr+https://foohub.com/foo3/foo3.bzr@38eb5d3b"),
+        Requirement("foo4@ bzr+https://foohub.com/foo4/foo4.bzr@v0.13.2"),
+        Requirement("foo5@ bzr+https://foohub.com/foo5/foo5.bzr/subdir"),
+    }
+    requirements = to_poetry_requirements(dependencies)
+    diff = requirements.symmetric_difference(target_requirements)
+    assert len(diff) == 0, f"bzr Diff: {pformat(diff)}"

@@ -227,6 +227,9 @@ def build_hg_url(package_name: str, package_value: dict[str, str], value: str) -
         url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
+    if "subdirectory" in package_value:
+        # TODO: ??? guessing on this syntax
+        url = f"{url}/{package_value['subdirectory']}"
     return url
 
 
@@ -239,13 +242,16 @@ def build_svn_url(package_name: str, package_value: dict[str, str], value: str) 
     """
     url = re.sub(r"^(svn@|https://)", r"svn+https://", value)
     if "rev" in package_value:
-        url = f"{url}@{{{package_value['rev']}}}"
+        url = f"{url}@{package_value['rev']}"
     elif "branch" in package_value:
         # TODO: ??? guessing on this syntax
         url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
-    return f"-e {url}#egg={package_name}"
+    if "subdirectory" in package_value:
+        # TODO: ??? guessing on this syntax
+        url = f"{url}/{package_value['subdirectory']}"
+    return f"{package_name}@ {url}"
 
 
 def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) -> str:
@@ -264,6 +270,9 @@ def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) 
         url = f"{url}@{package_value['branch']}"
     elif "tag" in package_value:
         url = f"{url}@{package_value['tag']}"
+    if "subdirectory" in package_value:
+        # TODO: ??? guessing on this syntax
+        url = f"{url}/{package_value['subdirectory']}"
     return url
 
 
@@ -427,16 +436,16 @@ def check_dependencies(key: str | None, project_dependencies: list[str], poetry_
         return pformat(sorted([str(r) for r in requirements]))
 
     number_of_problems: int = 0
+    key_str = f'"{key}" ' if key else ""
     project_requirements: set[Requirement] = {Requirement(dep) for dep in project_dependencies}
     poetry_requirements: set[Requirement] = to_poetry_requirements(poetry_dependencies)
-    # logger.debug(f"project_requirements: {format_requirement_set(project_requirements)}")
-    # logger.debug(f"poetry_requirements: {format_requirement_set(poetry_requirements)}")
+    logger.debug(f"{key_str}project_requirements: {format_requirement_set(project_requirements)}")
+    logger.debug(f"{key_str}poetry_requirements: {format_requirement_set(poetry_requirements)}")
     differing_requirements = project_requirements.symmetric_difference(poetry_requirements)
     if len(differing_requirements) > 0:
         number_of_problems += 1
         project_to_poetry_diff = project_requirements.difference(poetry_requirements)
         poetry_to_project_diff = poetry_requirements.difference(project_requirements)
-        key_str = f'"{key}" ' if key else ""
         if project_to_poetry_diff or poetry_to_project_diff:
             logger.info(
                 f"Dependencies {key_str}Differences:\n"
@@ -502,7 +511,7 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
             "[project] (takes either a file or a text attribute of the actual license and "
             "[tool.poetry] (takes the name of the license), so both must be manually set."
         )
-    except Exception:  # NOQA - Intentionally want to capture any exception here
+    except Exception:  # NOQA: Intentionally want to capture any exception here
         logger.exception("Problem checking pyproject.toml:")
         number_of_problems += 1
     return number_of_problems

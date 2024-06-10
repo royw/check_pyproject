@@ -95,8 +95,6 @@ def convert_poetry_specifier_to_pep508(value: str | dict, *, max_bounds: bool = 
                 out.append(wildcard_requirement_to_pep508(requirement))
             else:
                 out.append(str(SpecifierSet(VersionUtils.fill_version_to_three_parts(requirement))))
-    elif isinstance(value, dict):
-        out.append("=" + str(value))
 
     result = ",".join(out)
     if quotes:

@@ -64,7 +64,7 @@ class Settings(ApplicationSettings):
         :param parser: the argument parser with --conf_file already added.
         :param defaults: the default dictionary usually loaded from a config file
         """
-        # use normal argparse commands to add arguments to the given parser.
+        # use normal argparse commands to add arguments to the given parser.  Example:
         app_group = parser.add_argument_group("pyproject.toml files")
         app_group.add_argument(
             "pyproject_toml_files",
@@ -88,6 +88,10 @@ def main(args: list[str] | None = None) -> int:
     """The command line applications main function."""
     number_of_problems: int = 0
     with Settings(args=args) as settings:
+        # some info commands (--version, --longhelp) need to exit immediately
+        # after completion.  The quick_exit flag indicates if this is the case.
+        if settings.quick_exit:
+            return 0
         # If 1 or more arguments are given, they will be passed to `validate_pyproject_toml_file`.
         # Else, `validate_pyproject_toml_file` will be called with `$CWD/pyproject.toml`.
         for arg in settings.pyproject_toml_files:

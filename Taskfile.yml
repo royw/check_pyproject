@@ -20,12 +20,14 @@ tasks:
   format:
     desc: Check and reformat the code to a coding standard
     cmds:
-      - poetry run ruff format -config pyproject.toml src tests
+      - poetry run ruff format --config pyproject.toml src tests
 
   check:
     desc: Run the raw project script on the project's pyproject.toml file.
     cmds:
-      - poetry run python3 src/check_pyproject/check_pyproject_toml.py
+      # update project dependencies
+      - poetry update
+      - poetry run python3 -m check_pyproject --loglevel DEBUG
 
   setup_env:
     cmds:
@@ -36,7 +38,7 @@ tasks:
       # install project into virtual environment
       - poetry install
       # check that project and tool.poetry tables are in sync
-      - poetry run python3 src/check_pyproject/check_pyproject_toml.py
+      - poetry run python3 -m check_pyproject --loglevel INFO
       # show project's environment
       - poetry env list
       - poetry env info
@@ -55,7 +57,7 @@ tasks:
   version:
     desc: run the project, having it return its version
     cmds:
-      - poetry run python3 -m check_pyproject.check_pyproject_toml -- --version
+      - poetry run python3 -m check_pyproject -- --version
 
   metrics:
     desc: Analyze the code

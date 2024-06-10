@@ -3,7 +3,6 @@ import importlib
 import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from types import MappingProxyType
 
 from loguru import logger
 
@@ -16,31 +15,24 @@ class InfoControl:
 
     app_package: str | None = None
 
-    _help: MappingProxyType[str, str] = MappingProxyType(
-        {
-            "info_group": "",
-            "version": "Show the application's version.  (default: %(default)s)",
-            "longhelp": "Verbose help message.  (default: %(default)s)",
-        }
-    )
-
+    # noinspection PyMethodMayBeStatic
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
         """Use argparse commands to add arguments to the given parser."""
-        info_group = parser.add_argument_group(title="Informational Commands", description=self._help["info_group"])
+        info_group = parser.add_argument_group(title="Informational Commands", description="")
 
         info_group.add_argument(
             "-v",
             "--version",
             dest="version",
             action="store_true",
-            help=self._help["version"],
+            help="Show the application's version.  (default: %(default)s)",
         )
 
         info_group.add_argument(
             "--longhelp",
             dest="longhelp",
             action="store_true",
-            help=self._help["longhelp"],
+            help="Verbose help message.  (default: %(default)s)",
         )
         return parser
 
@@ -50,11 +42,11 @@ class InfoControl:
             app_module = importlib.import_module(self.app_package)
             if app_module.__doc__:
                 logger.info(app_module.__doc__)
-                sys.exit(0)
+            settings.quick_exit = True
 
-        if settings.version:
+        if settings.version and not settings.quick_exit:
             logger.info(f"Version {self._load_version()}")
-            sys.exit(0)
+            settings.quick_exit = True
 
     def _load_version(self) -> str:
         r"""

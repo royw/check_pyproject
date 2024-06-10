@@ -89,7 +89,7 @@ class ApplicationSettings(ABC):
         self._parser: argparse.ArgumentParser | None = None
         self._settings: argparse.Namespace | None = None
         self._remaining_argv: list[str] = []
-
+        self.quick_exit: bool = False
         self.logger_control = LoggerControl()
         self.info_control = InfoControl(app_package=app_package)
 
@@ -144,6 +144,8 @@ class ApplicationSettings(ABC):
         self.add_arguments(parser, defaults)
 
         settings, leftover_argv = parser.parse_known_args(args=remaining_argv)
+        # copy quick_exit into namespace for context usage
+        setattr(settings, "quick_exit", self.quick_exit)
         settings.config_files = config_files
 
         return parser, settings, leftover_argv
@@ -204,15 +206,16 @@ class ApplicationSettings(ABC):
         self.logger_control.setup(self._settings)
         self.info_control.setup(self._settings)
 
-        # validate both the base ApplicationSettings.validate_arguments and the child's validate_arguments.
-        # combine the results which each can be either a list of error message strings or an empty list
-        error_messages: list[str] = ApplicationSettings.validate_arguments(
-            self, self._settings, self._remaining_argv
-        ) + self.validate_arguments(self._settings, self._remaining_argv)
-        for error_msg in error_messages:
-            self._parser.error(error_msg)
+        if not self._settings.quick_exit:
+            # validate both the base ApplicationSettings.validate_arguments and the child's validate_arguments.
+            # combine the results which each can be either a list of error message strings or an empty list
+            error_messages: list[str] = ApplicationSettings.validate_arguments(
+                self, self._settings, self._remaining_argv
+            ) + self.validate_arguments(self._settings, self._remaining_argv)
+            for error_msg in error_messages:
+                self._parser.error(error_msg)
 
-        self._settings.parser = self._parser
+            self._settings.parser = self._parser
         return self._settings
 
     def __exit__(self, exc_type, exc_val, exc_tb):
