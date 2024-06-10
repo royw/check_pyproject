@@ -1,7 +1,7 @@
 import re
 
-from packaging.version import Version
 from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 
 from check_pyproject.version_utils import VersionUtils
 

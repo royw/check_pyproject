@@ -66,15 +66,13 @@ class VersionUtils:
             ver = VersionUtils.bump_minor_version(ver)
         elif ver.micro:
             ver = VersionUtils.bump_patch_version(ver)
+        elif len(ver.release) == 1:
+            # 0 bumping to 1
+            ver = VersionUtils.bump_major_version(ver)
         else:
-            # 0 or 0.0 or 0.0.0
-            if len(ver.release) == 1:
-                # 0 bumping to 1
-                ver = VersionUtils.bump_major_version(ver)
-            else:
-                # 0.0 bumping to 0.1
-                # and special case of 0.0.0 bumping to 0.1.0
-                ver = VersionUtils.bump_minor_version(ver)
+            # 0.0 bumping to 0.1
+            # and special case of 0.0.0 bumping to 0.1.0
+            ver = VersionUtils.bump_minor_version(ver)
         return ver
 
     @staticmethod

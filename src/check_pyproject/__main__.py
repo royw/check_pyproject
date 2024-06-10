@@ -1,40 +1,100 @@
+import argparse
 import sys
-from pathlib import Path
+
 from loguru import logger
+from pathlib import Path
+from typing import List, Sequence, Optional
+
+from pathvalidate.argparse import validate_filepath_arg
+
+from check_pyproject.clibones.application_settings import ApplicationSettings
 from check_pyproject.check_pyproject_toml import validate_pyproject_toml_file
 
-# Default loguru format for colorized output
-LOGURU_FORMAT = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-)
-# removed the timestamp from the logs
-LOGURU_MEDIUM_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-# just the colorized message in the logs
-LOGURU_SHORT_FORMAT = "<level>{message}</level>"
 
+class Settings(ApplicationSettings):
+    """Where the project's initial state (i.e. settings) are defined.
 
-def main(args: list[str] = None) -> None:  # pragma: no cover
-    """main function
-    If 1 or more arguments are given, they will be passed to `validate_pyproject_toml_file`.
-    Else, `validate_pyproject_toml_file` will be called with `$CWD/pyproject.toml`.
+    Settings extends the generic ApplicationSettings class which parses the command line arguments.
+
+    Usage::
+
+        with Settings() as settings:
+        try:
+            app.execute(settings)
+            exit(0)
+        except ArgumentError as ex:
+            error(str(ex))
+            exit(1)
     """
+    __project_name: str = "Check Pyproject"
+    """The name of the project"""
+
+    __project_package: str = "check_pyproject"
+    """The name of the package this settings belongs to. """
+
+    __project_description: str = (f"{__project_name} checks that overlapping metadata, between [project] "
+                                  f" and [tool.poetry] tables, is roughly) in-sync.")
+    """A short description of the application."""
+
+    def __init__(self, args: Sequence[str] | None = None) -> None:
+        """Initialize the base class."""
+
+        super().__init__(
+            app_name=Settings.__project_name,
+            app_package=Settings.__project_package,
+            app_description=Settings.__project_description,
+            config_sections=[Settings.__project_name],
+            args=args,
+        )
+
+    def add_parent_parsers(self) -> list[argparse.ArgumentParser]:
+        """This is where you should add any parent parsers for the main parser.
+
+        :return: a list of parent parsers
+        """
+        return []
+
+    def add_arguments(self, parser: argparse.ArgumentParser, defaults: dict[str, str]) -> None:
+        """This is where you should add arguments to the parser.
+
+        To add application arguments, you should override this method.
+
+        :param parser: the argument parser with --conf_file already added.
+        :param defaults: the default dictionary usually loaded from a config file
+        """
+        # use normal argparse commands to add arguments to the given parser.
+        app_group = parser.add_argument_group("pyproject.toml files")
+        app_group.add_argument(
+            "pyproject_toml_files",
+            type=validate_filepath_arg,
+            nargs="*",
+            default=["pyproject.toml"],
+            help=f"The pyproject.toml files to check",
+        )
+        return
+
+    def validate_arguments(self, settings: argparse.Namespace, remaining_argv: List[str]) -> list[str]:
+        """This provides a hook for validating the settings after the parsing is completed.
+
+        :param settings: the settings object returned by ArgumentParser.parse_args()
+        :param remaining_argv: the remaining argv after the parsing is completed.
+        :return: a list of error messages or an empty list
+        """
+        result = []
+        return result
+
+
+def main(args: Optional[list[str]] = None) -> int:
+    """The command line applications main function."""
     number_of_problems: int = 0
-    logger.remove(None)
-    logger.add(sys.stderr, level="DEBUG", format=LOGURU_SHORT_FORMAT)
-    if not args:
-        args: list[str] = sys.argv
-    if len(args) == 1:
-        args.append(str(Path.cwd() / "pyproject.toml"))
-    for arg in args[1:]:
-        if "--version" == arg:
-            print(f"{__package__}: {sys.modules['check_pyproject'].version}")
-        else:
+    with Settings(args=args) as settings:
+        # If 1 or more arguments are given, they will be passed to `validate_pyproject_toml_file`.
+        # Else, `validate_pyproject_toml_file` will be called with `$CWD/pyproject.toml`.
+        for arg in settings.pyproject_toml_files:
             logger.info(f'Checking: "{arg}"')
             number_of_problems += validate_pyproject_toml_file(Path(arg))
-    exit(number_of_problems)
+    return number_of_problems
 
 
 if __name__ == "__main__":
-    main()  # pragma: no cover
+    sys.exit(main(args=None))  # pragma: no cover

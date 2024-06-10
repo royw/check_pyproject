@@ -6,12 +6,15 @@ Entry point is the main() function located at the bottom of this file.
 """
 
 import re
-import tomllib
+from collections.abc import Callable
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Any
+from typing import Any
+
+import tomllib
 from loguru import logger
 from packaging.requirements import Requirement
+
 from check_pyproject.poetry_requirement import (
     convert_poetry_to_pep508,
 )
@@ -95,15 +98,13 @@ def check_fields(
                 # not in tool.poetry, so in project only
                 logger.warning(f'[project].{field}: "{project_data[field]}", but "{field}" not in [tool.poetry].')
                 number_of_problems += 1
+        elif field in poetry_data:
+            # in tool.poetry only
+            logger.warning(f'[tool.poetry].{field}: "{poetry_data[field]}", but "{field}" not in [project].')
+            number_of_problems += 1
         else:
-            # not in project
-            if field in poetry_data:
-                # in tool.poetry only
-                logger.warning(f'[tool.poetry].{field}: "{poetry_data[field]}", but "{field}" not in [project].')
-                number_of_problems += 1
-            else:
-                # in neither
-                logger.warning(f'"{field}" not found in [project] nor in [tool.poetry]')
+            # in neither
+            logger.warning(f'"{field}" not found in [project] nor in [tool.poetry]')
 
     return number_of_problems
 
@@ -116,10 +117,10 @@ def format_diff_values(
     """
 
     def set_vs_set(aa: set[str], bb: set[str]) -> str:
-        aa_str = pformat(sorted(list(aa)))
-        bb_str = pformat(sorted(list(bb)))
+        aa_str = pformat(sorted(aa))
+        bb_str = pformat(sorted(bb))
         # format the "a vs b" then replace any "set()" with "{ }" and replace single quotes with double quotes
-        return f"{aa_str}\nvs\n{bb_str}".replace("set()", "{ }").replace("'", '"')
+        return f"project: {aa_str}\nvs\npoetry: {bb_str}".replace("set()", "{ }").replace("'", '"')
 
     if isinstance(project_data, str):
         return f'"{project_data}"\nvs.\n"{poetry_data}"'
@@ -429,18 +430,17 @@ def check_dependencies(key: str | None, project_dependencies: list[str], poetry_
     number_of_problems: int = 0
     project_requirements: set[Requirement] = {Requirement(dep) for dep in project_dependencies}
     poetry_requirements: set[Requirement] = to_poetry_requirements(poetry_dependencies)
-    logger.debug(f"project_requirements: {format_requirement_set(project_requirements)}")
-    logger.debug(f"poetry_requirements: {format_requirement_set(poetry_requirements)}")
+    # logger.debug(f"project_requirements: {format_requirement_set(project_requirements)}")
+    # logger.debug(f"poetry_requirements: {format_requirement_set(poetry_requirements)}")
     differing_requirements = project_requirements.symmetric_difference(poetry_requirements)
     if len(differing_requirements) > 0:
         number_of_problems += 1
         project_to_poetry_diff = project_requirements.difference(poetry_requirements)
         poetry_to_project_diff = poetry_requirements.difference(project_requirements)
         key_str = f'"{key}" ' if key else ""
-        if project_to_poetry_diff:
-            logger.info(f"{key_str}requirements only in project:\n{format_requirement_set(project_to_poetry_diff)}")
-        if poetry_to_project_diff:
-            logger.info(f"{key_str}requirements only in poetry:\n{format_requirement_set(poetry_to_project_diff)}")
+        if project_to_poetry_diff or poetry_to_project_diff:
+            logger.info(f"Dependencies {key_str}Differences:\n"
+                        f"{format_diff_values(project_to_poetry_diff, poetry_to_project_diff)}")
     return number_of_problems
 
 
@@ -512,7 +512,7 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     number_of_problems: int = 0
     try:
         logger.info(f"Reading pyproject.toml file: {project_filename}")
-        with open(project_filename, "r", encoding="utf-8") as f:
+        with open(project_filename, encoding="utf-8") as f:
             number_of_problems += check_pyproject_toml(toml_data=tomllib.loads(f.read()))
     except FileNotFoundError:
         logger.error(f'"{project_filename}" is not a file.')
@@ -523,5 +523,5 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     except ValueError as err:
         logger.error(f"Unable to parse {project_filename}: {err}")
         number_of_problems = 1  # one error
-    logger.info(f"Validate pyproject.toml file: {project_filename} => {number_of_problems} problems detected.")
+    logger.info(f"Validate pyproject.toml file: {project_filename} => {number_of_problems} problems detected.\n")
     return number_of_problems

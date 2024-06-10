@@ -1,24 +1,23 @@
 import sys
-import tomllib
 import unittest
 from pathlib import Path
 from typing import Any
 
+import tomllib
+from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
 from check_pyproject.__main__ import LOGURU_SHORT_FORMAT
 from check_pyproject.check_pyproject_toml import (
-    validate_pyproject_toml_file,
+    check_fields,
     convert_poetry_to_pep508,
     string_field,
-    check_fields,
     to_poetry_requirements,
+    validate_pyproject_toml_file,
 )
 from check_pyproject.poetry_requirement import caret_requirement_to_pep508
 from check_pyproject.version_utils import VersionUtils
-
-from loguru import logger
 
 logger.remove(None)
 logger.add(sys.stderr, level="DEBUG", format=LOGURU_SHORT_FORMAT)
@@ -70,9 +69,9 @@ class CheckPyProjectTomlTestCase(unittest.TestCase):
         self.assertEqual(1, number_of_problems)
 
     def test_missing_field(self):
-        with open(Path(__file__).parent / "good_pyproject.toml", "r", encoding="utf-8") as f:
+        with open(Path(__file__).parent / "good_pyproject.toml", encoding="utf-8") as f:
             toml_data: dict[str, Any] = tomllib.loads(f.read())
-        self.assertTrue(0 == check_fields(string_field, ["bogus"], toml_data))
+        self.assertTrue(check_fields(string_field, ["bogus"], toml_data) == 0)
 
     def test_convert_poetry_to_pep508(self):
         # ref: https://python-poetry.org/docs/dependency-specification/

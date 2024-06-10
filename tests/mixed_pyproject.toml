@@ -94,7 +94,9 @@ dynamic = []
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
   "pathvalidate>=3.2.0, <4.0.0",
-  "usingversion>=0.1.2, <0.2.0"
+  "usingversion>=0.1.2, <0.2.0",
+  "foo2@ https://example.com/example-1.0-py3-none-any.whl;sys_platform=='darwin'",
+  "foo3@ https://example.com/foo-1.0.0-py3-none-macosx_11_0_arm64.whl;sys_platform=='darwin'",
 ]
 
 # TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
@@ -241,6 +243,18 @@ python = "^3.11"
 loguru = "^0.7.3"
 usingversion = "^0.1.2"
 pathvalidate = "^3.2.0"
+foo1 = [
+    {version = "<=1.9", python = ">=3.6,<3.8"},
+    {version = "^2.0", python = ">=3.8"}
+]
+foo2 = [
+    { platform = "darwin", url = "https://example.com/example-1.0-py3-none-any.whl" },
+    { platform = "linux", version = "^1.0" },
+]
+foo3 = [
+    { platform = "darwin", url = "https://example.com/foo-1.0.0-py3-none-macosx_11_0_arm64.whl" },
+    { platform = "linux", version = "^1.0", source = "pypi" },
+]
 
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]
