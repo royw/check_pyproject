@@ -105,7 +105,7 @@ dependencies = [
 # point and the value is the object reference.
 #
 # more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
-scripts = {'check_pyproject' = "check_pyproject.check_pyproject_toml: main"}
+scripts = {'check_pyproject' = "check_pyproject.__main__: main"}
 project.gui-scripts = {}
 project.entry-points = {}
 
@@ -306,7 +306,7 @@ mkdocs-section-index = "^0.3.9"
 mkdocs-material = "^9.5.25"
 
 [tool.poetry.scripts]
-check_pyproject = "check_pyproject.check_pyproject_toml: main"
+check_pyproject = "check_pyproject.__main__: main"
 
 # Poetry supports extras to allow expression of:
 #

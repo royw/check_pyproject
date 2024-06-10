@@ -1,6 +1,5 @@
 import argparse
 import importlib
-import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
 
