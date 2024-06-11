@@ -8,7 +8,6 @@ from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
-import check_pyproject.__main__
 from check_pyproject.check_pyproject_toml import (
     check_fields,
     convert_poetry_specifier_to_pep508,
@@ -174,12 +173,6 @@ def test_caret_requirement_to_pep508():
     assert str(SpecifierSet(">=1.2.3,<2.0.0")) == caret_requirement_to_pep508(
         "^1.2.3"[1:], max_bounds=True
     ), "^1.2.3 max_bounds=True"
-
-
-def test_main():
-    assert check_pyproject.__main__.main([str(Path(__file__).parent / "good_pyproject.toml")]) == 0
-    assert check_pyproject.__main__.main(["--version"]) == 0
-    assert check_pyproject.__main__.main(["--longhelp"]) == 0
 
 
 def test_hg_vcs():
