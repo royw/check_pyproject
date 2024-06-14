@@ -16,6 +16,8 @@ then you need to manually maintain sync between [project] and [tool.poetry] tabl
 This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly in-sync.
 """
 
+from __future__ import annotations
+
 from usingversion import getattr_with_version
 
 # version      set to the application's version from the pyproject.toml file.
