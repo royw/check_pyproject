@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import sys
+import tomllib
 from pathlib import Path
 from pprint import pformat
 from typing import Any
 
-import tomllib
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
@@ -78,7 +80,7 @@ def test_directory():
 
 
 def test_missing_field():
-    with open(Path(__file__).parent / "good_pyproject.toml", encoding="utf-8") as f:
+    with (Path(__file__).parent / "good_pyproject.toml").open(encoding="utf-8") as f:
         toml_data: dict[str, Any] = tomllib.loads(f.read())
     assert check_fields(string_field, ["bogus"], toml_data) == 0
 
