@@ -42,23 +42,23 @@ theme:
     - yaml
 
 plugins:
-- search
-- gen-files:
-    scripts:
-    - scripts/gen_ref_pages.py
-- literate-nav:
-    nav_file: SUMMARY.md
-- section-index
-- mkdocstrings:
-    default_handler: python
-    enable_inventory: false
-    handlers:
-      python:
-        paths: [src]
-        load_external_modules: false
+  - search
+  - gen-files:
+      scripts:
+        - scripts/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      enable_inventory: false
+      handlers:
+        python:
+          paths: [src]
+          load_external_modules: false
 
 nav:
-  - About: 'index.md'
+  - About: "index.md"
   # rest of the navigation...
   # defer to gen-files + literate-nav
   - Code Reference: reference/
