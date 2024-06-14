@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from packaging.version import Version
 
 
@@ -25,7 +27,7 @@ class VersionUtils:
         minor: int = 0
         if len(version.release) >= 1:
             major = version.release[0]
-        if len(version.release) >= 2:  # noqa: PLR2004
+        if len(version.release) >= 2:
             minor = version.release[1]
         return Version(f"{epoch_str}{major}.{minor + 1}.0")
 
@@ -41,9 +43,9 @@ class VersionUtils:
         patch: int = 0
         if len(version.release) >= 1:
             major = version.release[0]
-        if len(version.release) >= 2:  # noqa: PLR2004
+        if len(version.release) >= 2:
             minor = version.release[1]
-        if len(version.release) >= 3:  # noqa: PLR2004
+        if len(version.release) >= 3:
             patch = version.release[2]
         return Version(f"{epoch_str}{major}.{minor}.{patch + 1}")
 
@@ -82,6 +84,6 @@ class VersionUtils:
         """
         if not version_str:
             return "0.0.0"
-        while len(version_str.split(".")) < 3:  # noqa: PLR2004
+        while len(version_str.split(".")) < 3:
             version_str += ".0"
         return version_str
