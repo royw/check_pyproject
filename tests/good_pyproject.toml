@@ -1,4 +1,8 @@
 # ref: https://packaging.python.org/en/latest/specifications/pyproject-toml
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 
 [project]
 # TOML type: string
@@ -124,8 +128,8 @@ dependencies = [
 #
 # more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
 scripts = {'main' = "check_pyproject.__main__: main"}
-project.gui-scripts = {}
-project.entry-points = {}
+gui-scripts = {}
+entry-points = {}
 
 # TOML type: a table with values of arrays of PEP 508 strings (optional-dependencies)
 # For optional-dependencies, it is a table where each key specifies an extra and whose value is an array of
@@ -137,17 +141,12 @@ dev = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
   "radon>=6.0.1, <7.0.0",
-  "versio>=0.5.0, <0.6.0"
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
   "tox>=4.14.2, <5.0.0",
   "pytest-cov>=4.1.0, <5.0.0"
 ]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 ### pytest
 
@@ -303,7 +302,6 @@ my-package2 = { path = "../my-package/dist/my-package-0.1.0.tar.gz" }
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]
 radon = "^6.0.1"
-versio = "^0.5.0"
 pytest = "^8.1.1"
 tox = "^4.14.2"
 

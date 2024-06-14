@@ -107,8 +107,8 @@ dependencies = [
 # more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
 #scripts = {'main' = "check_pyproject.__main__: main"}
 scripts = {}
-project.gui-scripts = {}
-project.entry-points = {}
+gui-scripts = {}
+entry-points = {}
 
 # TOML type: a table with values of arrays of PEP 508 strings (optional-dependencies)
 # For optional-dependencies, it is a table where each key specifies an extra and whose value is an array of
