@@ -94,6 +94,22 @@ tasks:
       - rm -rf tests/__pycache__
       - rm -rf poetry.lock
 
+  switch-to-hatch:
+    desc: Switch development to use hatch instead of poetry
+    cmds:
+      - poetry run python3 scripts/swap_build_system.py hatch
+      - task: clean
+      - rm -rf Taskfile.yml ; ln -s Taskfile-hatch.yml Taskfile.yml
+
+  switch-to-poetry:
+    desc: Switch development to use poetry instead of hatch
+    cmds:
+      - poetry run python3 scripts/swap_build_system.py poetry
+      - task: clean
+      - rm -rf Taskfile.yml ; ln -s Taskfile-poetry.yml Taskfile.yml
+      - poetry lock
+      - poetry install
+
   main:
     desc: Run the __main__ module code, passes arguments to the module
     cmds:

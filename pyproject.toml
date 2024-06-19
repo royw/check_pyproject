@@ -5,12 +5,8 @@
 # ref: https://packaging.python.org/en/latest/specifications/pyproject-toml
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
-
-#[build-system]
-#requires = ["poetry-core>=1.0.0"]
-#build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 # TOML type: string
@@ -140,6 +136,7 @@ dev = [
   "validate-pyproject>=0.18.0,<0.19.0",
   "tox<5.0.0,>=4.14.2",
   "reuse<4.0.0,>=3.0.2",
+  "tomlkit<0.13.0,>=0.12.5",
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
@@ -445,6 +442,7 @@ ruff = "^0.4.7"
 pre-commit = "^3.7.1"
 validate-pyproject = "^0.18"
 reuse = "^3.0.2"
+tomlkit = "^0.12.5"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"

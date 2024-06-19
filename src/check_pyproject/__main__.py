@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-""" main entry point for application
-"""
+"""main entry point for application"""
 
 from __future__ import annotations
 
