@@ -462,6 +462,7 @@ def check_dependencies(key: str | None, project_dependencies: list[str], poetry_
     return number_of_problems
 
 
+# noinspection PyBroadException
 def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
     """
     Check fields that should be identical between [project] and [tool.poetry]
@@ -471,14 +472,23 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
     number_of_problems: int = 0
 
     try:
+        poetry_data = toml_data["tool"]["poetry"]
+    except KeyError:
+        logger.error("pyproject missing tool.poetry section.")
+        return 0
+    try:
+        project_data = toml_data["project"]
+    except KeyError:
+        logger.error("pyproject missing tool.project section.")
+        return 0
+
+    try:
         # group field names by the TOML type of their values
         string_field_names: list[str] = ["name", "description", "readme", "version", "scripts", "urls"]
         set_field_names: list[str] = ["keywords", "classifiers"]
         author_field_names: list[str] = ["authors", "maintainers"]
         dependency_field_names: list[str] = ["dependencies"]
-        optional_dependency_keys: set[str] = set(toml_data["tool"]["poetry"]["group"]) | set(
-            toml_data["project"]["optional-dependencies"]
-        )
+        optional_dependency_keys: set[str] = set(poetry_data["group"]) | set(project_data["optional-dependencies"])
 
         # gather all the field names we check, so we can later find the unchecked field names
         checked_field_names: list[str] = (
@@ -519,7 +529,9 @@ def check_pyproject_toml(toml_data: dict[str, Any]) -> int:
             "[project] (takes either a file or a text attribute of the actual license and "
             "[tool.poetry] (takes the name of the license), so both must be manually set."
         )
-    except Exception:  # NOQA: Intentionally want to capture any exception here
+    except Exception:
+        # This is a catch-all.  We intentionally want to capture any exception here so they
+        # are counted as a problem and logged.
         logger.exception("Problem checking pyproject.toml:")
         number_of_problems += 1
     return number_of_problems
@@ -530,7 +542,7 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     number_of_problems: int = 0
     try:
         logger.info(f"Reading pyproject.toml file: {project_filename}")
-        with open(project_filename, encoding="utf-8") as f:
+        with Path(project_filename).open(encoding="utf-8") as f:
             number_of_problems += check_pyproject_toml(toml_data=tomllib.loads(f.read()))
     except FileNotFoundError:
         logger.error(f'"{project_filename}" is not a file.')
@@ -541,5 +553,5 @@ def validate_pyproject_toml_file(project_filename: Path) -> int:
     except ValueError as err:
         logger.error(f"Unable to parse {project_filename}: {err}")
         number_of_problems = 1  # one error
-    logger.info(f"Validate pyproject.toml file: {project_filename} => {number_of_problems} problems detected.\n")
+    logger.info(f"Check pyproject.toml file: {project_filename} => {number_of_problems} problems detected.\n")
     return number_of_problems
