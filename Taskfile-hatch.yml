@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+version: "3"
+
+tasks:
+  init:
+    desc: Initialize the project for using poetry
+    cmds:
+      - hatch env show
+
+  lint:
+    desc: Perform static code analysis
+    cmds:
+      - hatch run -- dev:ruff check --config pyproject.toml --fix src tests
+      - hatch run -- dev:fawltydeps --detailed || true
+
+  format:
+    desc: Check and reformat the code to a coding standard
+    cmds:
+      - hatch run -- dev:ruff format --config pyproject.toml src tests
+
+  check:
+    desc: Run the raw project script on the project's pyproject.toml file.
+    cmds:
+      - hatch -e dev run -- python3 -m check_pyproject --loglevel DEBUG
+
+  setup_env:
+    cmds:
+      # validate the pyproject.toml file
+      - hatch run -- dev:validate-pyproject pyproject.toml
+      # check that project and tool.poetry tables are in sync
+      - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
+      # show project's environment
+      - hatch env show
+
+  build:
+    desc: Perform normal build workflow
+    cmds:
+      - task: setup_env
+      - task: format
+      - task: lint
+      - hatch -e dev build
+      - hatch -e dev run pip install --no-deps -e .
+      - task: tests
+      - task: metrics
+      - task: version
+
+  version:
+    desc: run the project, having it return its version
+    cmds:
+      - hatch -e dev run -- python3 -m check_pyproject --version
+
+  metrics:
+    desc: Analyze the code
+    cmds:
+      - bash -c "mkdir -p metrics"
+      - hatch run -- metrics:radon cc --show-complexity --json --min=A --output-file=metrics/code-complexity.json src/
+      - hatch run -- metrics:radon cc --show-complexity --min=A src/ -- | tail -n +1 | head -10
+      - hatch run -- metrics:radon hal --json --output-file=metrics/halstead-metrics.json src/
+      - hatch run -- metrics:radon mi --json --output-file=metrics/maintainability-index.json src/
+      - hatch run -- metrics:radon raw --json --output-file=metrics/raw-metrics.json src/
+
+  tests:
+    desc: Test the code
+    cmds:
+      - hatch run -- test:pytest --cov-report term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject tests
+      - hatch run test:test
+
+  docs:
+    cmds:
+      - hatch run docs:build
+      - hatch run docs:serve
+      - open localhost:8000
+
+  clean:
+    desc: Remove virtual environments and generated files
+    cmds:
+      - hatch env prune
+      - rm -rf .tox
+      - rm -rf dist
+      - rm -rf metrics
+      - rm -rf site
+      - rm -rf tests/__pycache__
+
+  main:
+    desc: Run the __main__ module code, passes arguments to the module
+    cmds:
+      - hatch -e dev run -- python3 -m check_pyproject {{.CLI_ARGS}}

@@ -4,6 +4,14 @@
 
 # ref: https://packaging.python.org/en/latest/specifications/pyproject-toml
 
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+#[build-system]
+#requires = ["poetry-core>=1.0.0"]
+#build-backend = "poetry.core.masonry.api"
+
 [project]
 # TOML type: string
 # The name of the project.
@@ -35,7 +43,7 @@ readme = "README.md"
 
 # TOML type: string
 # The Python version requirements of the project.
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 # TOML type: table
 # The table may have one of two keys. The file key has a string value that is a file path relative to
@@ -54,15 +62,19 @@ license = {file = "LICENSE.txt"}
 # the keys must be specified in the table.
 #
 # more:  https://packaging.python.org/en/latest/specifications/pyproject-toml/#authors-maintainers
-authors = [{name = "Roy Wright", email = "roy@wright.org"}]
+authors = [
+  {name = "Roy Wright", email = "roy@wright.org"},
+]
 
 # TOML type: Array of inline tables with string keys and values
 # The “maintainers” key is similar to “authors” in that its exact meaning is open to interpretation.
-maintainers = [{name = "Roy Wright", email = "roy@wright.org"}]
+maintainers = [
+  {name = "Roy Wright", email = "roy@wright.org"},
+]
 
 # TOML type: array of strings
 # The keywords for the project.
-keywords = ["python", "CLI", "skeleton"]
+keywords = ["python", "check", "pyproject"]
 
 # TOML type: array of strings
 # Trove classifiers (https://pypi.org/classifiers/) which apply to the project.
@@ -88,6 +100,18 @@ urls = {"check_pyproject" = "https://github.com/royw/check_pyproject"}
 # more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#dynamic
 dynamic = []
 
+# TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
+# Entry Points
+# There are three tables related to entry points. The [project.scripts] table corresponds to the
+# console_scripts group in the entry points specification. The key of the table is the name of the entry
+# point and the value is the object reference.
+#
+# more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
+scripts = {'check_pyproject' = "check_pyproject.__main__:main"}
+#project.gui-scripts = {}
+#project.entry-points = {}
+
+
 # TOML type: Array of PEP 508 strings (dependencies)
 # For dependencies, it is a key whose value is an array of strings. Each string represents a dependency of
 # the project and MUST be formatted as a valid PEP 508 (https://peps.python.org/pep-0508/) string.
@@ -101,17 +125,6 @@ dependencies = [
   "pathvalidate<4.0.0,>=3.2.0"
 ]
 
-# TOML type: table ([project.scripts], [project.gui-scripts], and [project.entry-points])
-# Entry Points
-# There are three tables related to entry points. The [project.scripts] table corresponds to the
-# console_scripts group in the entry points specification. The key of the table is the name of the entry
-# point and the value is the object reference.
-#
-# more: https://packaging.python.org/en/latest/specifications/pyproject-toml/#entry-points
-scripts = {'check_pyproject' = "check_pyproject.__main__: main"}
-project.gui-scripts = {}
-project.entry-points = {}
-
 # TOML type: a table with values of arrays of PEP 508 strings (optional-dependencies)
 # For optional-dependencies, it is a table where each key specifies an extra and whose value is an array of
 # strings. The strings of the arrays must be valid PEP 508 strings. The keys MUST be valid values for
@@ -119,17 +132,23 @@ project.entry-points = {}
 # Provides-Extra metadata.
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.1.1, <9.0.0",
-  "pytest-cov<6.0.0,>=5.0.0",
-  "tox>=4.14.2, <5.0.0",
-  "radon>=6.0.1, <7.0.0",
-  "fawltydeps>=0.15.0, <0.16.0",
-  "ruff<0.5.0,>=0.4.7"
+  "pytest>=8.1.1,<9.0.0",
+  "pytest-cov>=5.0.0,<6.0.0",
+  "fawltydeps>=0.15.0,<0.16.0",
+  "ruff>=0.4.7,<0.5.0",
+  "pre-commit>=3.7.1,<4.0.0",
+  "validate-pyproject>=0.18.0,<0.19.0",
+  "tox<5.0.0,>=4.14.2",
+  "reuse<4.0.0,>=3.0.2",
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
   "pytest-cov<6.0.0,>=5.0.0",
-  "tox>=4.14.2, <5.0.0",
+]
+metrics = [
+  "pytest<9.0.0,>=8.1.1",
+  "pytest-cov<6.0.0,>=5.0.0",
+  "radon<7.0.0,>=6.0.1",
 ]
 docs = [
   "mkdocs<2.0.0,>=1.6.0",
@@ -137,25 +156,104 @@ docs = [
   "mkdocs-gen-files<0.6.0,>=0.5.0",
   "mkdocs-literate-nav<0.7.0,>=0.6.1",
   "mkdocs-section-index<0.4.0,>=0.3.9",
-  "mkdocs-material<10.0.0,>=9.5.25"
+  "mkdocs-material<10.0.0,>=9.5.25",
+]
+sphinx = [
+  "sphinx<8.0.0,>=7.3.7",
+  "sphinx-autodoc-typehints<3.0.0,>=2.1.1",
+  "sphinx_copybutton>=0.5.2,<0.6.0",
+  "furo>=2024.5.6,<2025.0.0",
+  "myst-parser<4.0.0,>=3.0.1",
 ]
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+### Hatch build system
+
+# environment scripts allow you to assign a command to an alias
+# for example:
+# test = "pytest {args}"
+# assigns the command "pytest {args}" to test.
+# to use: `hatch run test arg...`
+# note, you can access dependencies without adding a script entry, for example:
+# `hatch run pytest`
+
+[tool.hatch.envs.default]
+features = ["test"]
+
+[tool.hatch.envs.default.scripts]
+
+[tool.hatch.envs.dev]
+features = ["dev"]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest {args}"
+
+[tool.hatch.envs.test]
+features = ["test"]
+
+[tool.hatch.envs.test.scripts]
+test = "pytest {args}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.11", "3.12"]
+
+[tool.hatch.envs.docs]
+features = ["docs"]
+dependencies = [
+  "mkdocs"
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8000"
+
+[tool.hatch.envs.sphinx]
+features = ["sphinx"]
+
+[tool.hatch.envs.metrics]
+features = ["metrics"]
 
 ### pytest
 
 [tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+  "-ra", "--showlocals",
+  "--strict-markers",
+  "--strict-config",
+#  "--import-mode=importlib",
+]
+xfail_strict = true
+filterwarnings = [
+  "error",
+]
+log_cli_level = "INFO"
+pythonpath = "src/check_pyproject"
 testpaths = [
     "tests"
 ]
-pythonpath = "src/check_pyproject"
-addopts = ["--import-mode=importlib"]
+
+### mypy linter
+
+[tool.mypy]
+files = ["src", "tests"]
+python_version = "3.8"
+warn_unused_configs = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "check_pyproject.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
 
 ### ruff linter/formatter
 
 [tool.ruff]
+src = ["src"]
+exclude = [".tox", "dist", "docs", "metrics", "scripts", "site"]
 # Set the maximum line length to 119.
 line-length = 119
 
@@ -163,7 +261,57 @@ line-length = 119
 # Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
 # overlap with the use of a formatter, like Black, but we can override this behavior by
 # explicitly adding the rule.
-#extend-select = ["E501"]
+# extend-select = ["E501"]
+extend-select = [
+  "B",        # flake8-bugbear
+  "I",        # isort
+  "ARG",      # flake8-unused-arguments
+  "C4",       # flake8-comprehensions
+  "EM",       # flake8-errmsg
+  "ICN",      # flake8-import-conventions
+  "G",        # flake8-logging-format
+  "PGH",      # pygrep-hooks
+  "PIE",      # flake8-pie
+  "PL",       # pylint
+  "PT",       # flake8-pytest-style
+  "PTH",      # flake8-use-pathlib
+  "RET",      # flake8-return
+  "RUF",      # Ruff-specific
+  "SIM",      # flake8-simplify
+  "T20",      # flake8-print
+  "UP",       # pyupgrade
+  "YTT",      # flake8-2020
+  "EXE",      # flake8-executable
+  "NPY",      # NumPy specific rules
+  "PD",       # pandas-vet
+]
+ignore = [
+  "PLR09",    # Too many <...>
+  "PLR2004",  # Magic value used in comparison
+  "ISC001",   # Conflicts with formatter
+  "S101",     # pytest uses "assert" so allow it
+]
+isort.required-imports = ["from __future__ import annotations"]
+# Uncomment if using a _compat.typing backport
+# typing-modules = ["scientific python._compat.typing"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["T20"]
+"noxfile.py" = ["T20"]
+
+[tool.pylint]
+py-version = "3.8"
+ignore-paths = [".*/_version.py"]
+reports.output-format = "colorized"
+similarities.ignore-imports = "yes"
+messages_control.disable = [
+  "design",
+  "fixme",
+  "line-too-long",
+  "missing-module-docstring",
+  "missing-function-docstring",
+  "wrong-import-position",
+]
 
 [tool.fawltydeps]
 code = ["src"]  # Only search for imports under ./src
@@ -173,6 +321,7 @@ ignore_unused = ["radon", "pytest-cov", "pytest", "tox", "fawltydeps", "mkdocs",
 output_format = "human_detailed"  # Detailed report by default
 
 [tool.coverage.run]
+#source = ["check_pyproject"]
 source_pkgs = ["check_pyproject"]
 branch = true
 parallel = true
@@ -189,6 +338,10 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+]
+exclude_also = [
+  '\.\.\.',
+  'if typing.TYPE_CHECKING:',
 ]
 
 ### Poetry build system
@@ -239,7 +392,7 @@ repository = "https://github.com/royw/check_pyproject"
 documentation = "https://github.com/royw/check_pyproject"
 
 # A list of keywords that the package is related to. Optional
-keywords = ['python', 'CLI', 'skeleton']
+keywords = ['python', 'check', 'pyproject']
 
 # A list of PyPI trove classifiers that describe the project. Optional
 classifiers = [
@@ -277,7 +430,7 @@ include = [
 # required in this case.
 # more: https://python-poetry.org/docs/pyproject/#dependencies-and-dependency-groups
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 loguru = "^0.7.2"
 packaging = "^24.0"
 pathvalidate = "^3.2.0"
@@ -287,14 +440,20 @@ pathvalidate = "^3.2.0"
 pytest = "^8.1.1"
 pytest-cov = "^5.0.0"
 tox = "^4.14.2"
-radon = "^6.0.1"
 fawltydeps = "^0.15.0"
 ruff = "^0.4.7"
+pre-commit = "^3.7.1"
+validate-pyproject = "^0.18"
+reuse = "^3.0.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"
 pytest-cov = "^5.0.0"
-tox = "^4.14.2"
+
+[tool.poetry.group.metrics.dependencies]
+pytest = "^8.1.1"
+pytest-cov = "^5.0.0"
+radon = "^6.0.1"
 
 # This section describes the scripts or executables that will be installed when installing the package.
 # When a script is added or updated, run poetry install to make them available in the project’s virtualenv.
@@ -307,8 +466,15 @@ mkdocs-literate-nav = "^0.6.1"
 mkdocs-section-index = "^0.3.9"
 mkdocs-material = "^9.5.25"
 
+[tool.poetry.group.sphinx.dependencies]
+sphinx = "^7.3.7"
+myst-parser = "^3.0.1"
+sphinx-copybutton = "^0.5.2"
+sphinx-autodoc-typehints = "^2.1.1"
+furo = "^2024.5.6"
+
 [tool.poetry.scripts]
-check_pyproject = "check_pyproject.__main__: main"
+check_pyproject = "check_pyproject.__main__:main"
 
 # Poetry supports extras to allow expression of:
 #

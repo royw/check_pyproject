@@ -5,21 +5,17 @@
 version: "3"
 
 tasks:
-
   init:
     desc: Initialize the project for using poetry
     cmds:
-      - poetry init
-      - poetry install
-      - poetry env list
-      - poetry env info
-#      - poetry run mkdocs new .
+      - hatch env show
 
   lint:
     desc: Perform static code analysis
     cmds:
       - poetry run ruff check --config pyproject.toml --fix src tests
-      - poetry run fawltydeps --detailed 
+      - poetry run fawltydeps --detailed || true
+
 
   format:
     desc: Check and reformat the code to a coding standard
@@ -51,11 +47,11 @@ tasks:
     desc: Perform normal build workflow
     cmds:
       - task: setup_env
-      - task: lint
       - task: format
+      - task: lint
       - poetry build
-      - task: metrics
       - task: tests
+      - task: metrics
       - task: version
 
   version:
@@ -96,6 +92,7 @@ tasks:
       - rm -rf metrics
       - rm -rf site
       - rm -rf tests/__pycache__
+      - rm -rf poetry.lock
 
   main:
     desc: Run the __main__ module code, passes arguments to the module
