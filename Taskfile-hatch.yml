@@ -15,6 +15,7 @@ tasks:
     cmds:
       - hatch run -- dev:ruff check --config pyproject.toml --fix src tests
       - hatch run -- dev:fawltydeps --detailed || true
+      - hatch -e dev run -- reuse lint
 
   format:
     desc: Check and reformat the code to a coding standard
