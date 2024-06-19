@@ -52,13 +52,19 @@ class LoggerControl:
             help=f'Set verbosity level to one of the following: {LoggerControl.VALID_LOG_LEVELS} (default: "INFO").',
         )
 
-        output_group.add_argument("--debug", dest="debug", action="store_true",
-                                  help='Output all messages (debug, info, warning, error, & critical).  '
-                                       'Overrides "--loglevel".')
+        output_group.add_argument(
+            "--debug",
+            dest="debug",
+            action="store_true",
+            help="Output all messages (debug, info, warning, error, & critical).  " 'Overrides "--loglevel".',
+        )
 
-        output_group.add_argument("--quiet", dest="quiet", action="store_true",
-                                  help='Only output error and critical messages.  Overrides "--loglevel" '
-                                       'and "--debug".')
+        output_group.add_argument(
+            "--quiet",
+            dest="quiet",
+            action="store_true",
+            help='Only output error and critical messages.  Overrides "--loglevel" ' 'and "--debug".',
+        )
 
         output_group.add_argument(
             "--logfile",
