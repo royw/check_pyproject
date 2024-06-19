@@ -9,19 +9,23 @@ This single file script checks that overlapping metadata, between [project] and 
 Entry point is the main() function located at the bottom of this file.
 """
 
+from __future__ import annotations
+
 import re
-from collections.abc import Callable
+import tomllib
 from pathlib import Path
 from pprint import pformat
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import tomllib
 from loguru import logger
 from packaging.requirements import Requirement
 
 from check_pyproject.poetry_requirement import (
     convert_poetry_specifier_to_pep508,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # valid dependency markers
 valid_markers_set = {

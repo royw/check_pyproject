@@ -5,12 +5,15 @@
 from __future__ import annotations
 
 import sys
-from argparse import ArgumentParser
-from types import MappingProxyType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from pathvalidate.argparse import validate_filepath_arg
+
+if TYPE_CHECKING:
+    from argparse import ArgumentParser
+    from types import MappingProxyType
+
 
 # Default loguru format for colorized output
 LOGURU_FORMAT = (

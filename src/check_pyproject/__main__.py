@@ -4,16 +4,22 @@
 
 """ main entry point for application
 """
-import argparse
+
+from __future__ import annotations
+
 import sys
-from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from pathvalidate.argparse import validate_filepath_arg
 
 from check_pyproject.check_pyproject_toml import validate_pyproject_toml_file
 from check_pyproject.clibones.application_settings import ApplicationSettings
+
+if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Sequence
 
 
 class Settings(ApplicationSettings):

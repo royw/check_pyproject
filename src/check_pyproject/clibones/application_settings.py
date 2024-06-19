@@ -24,16 +24,21 @@ This base class adds the following features to ArgumentParser:
 
 """
 
+from __future__ import annotations
+
 import argparse
 import contextlib
-import os
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from configparser import ConfigParser, NoSectionError
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from check_pyproject.clibones.info_control import InfoControl
 from check_pyproject.clibones.logger_control import LoggerControl
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class ApplicationSettings(ABC):
