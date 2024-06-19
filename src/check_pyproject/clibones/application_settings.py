@@ -154,7 +154,7 @@ class ApplicationSettings(ABC):
 
         settings, leftover_argv = parser.parse_known_args(args=remaining_argv)
         # copy quick_exit into namespace for context usage
-        setattr(settings, "quick_exit", self.quick_exit)
+        settings.quick_exit = self.quick_exit
         settings.config_files = config_files
 
         return parser, settings, leftover_argv
@@ -170,7 +170,7 @@ class ApplicationSettings(ABC):
         :return: the set of config file locations
         """
         rc_name: str = f".{self.__app_package}rc"
-        conf_name: str = os.path.expanduser(f"~/.local/{self.__app_package}.conf")
+        conf_name: str = Path(f"~/.local/{self.__app_package}.conf").expanduser().name
         return [rc_name, conf_name]
 
     @abstractmethod
@@ -227,7 +227,7 @@ class ApplicationSettings(ABC):
             self._settings.parser = self._parser
         return self._settings
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # NOQA: B027
         """
         context manager exit
         """
