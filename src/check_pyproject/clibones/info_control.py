@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
 import argparse
 import importlib
 from argparse import ArgumentParser

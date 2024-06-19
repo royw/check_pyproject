@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
 """Generate the code reference pages and navigation."""
 from __future__ import annotations
 

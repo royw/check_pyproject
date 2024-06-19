@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
 """
 This single file script checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly
  in-sync.

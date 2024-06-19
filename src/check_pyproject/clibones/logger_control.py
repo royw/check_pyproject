@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
 import sys
 from argparse import ArgumentParser
 from types import MappingProxyType

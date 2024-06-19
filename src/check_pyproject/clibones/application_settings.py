@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
 """
 A context manager base class that optionally reads a config file then uses the values as defaults
 for command line argument parsing.

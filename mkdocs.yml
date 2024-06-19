@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
 # MkDocs markdown documentation configuration with material theme and auto API document generation.
 # scripts/gen_ref_pages.py is required for auto API generation.dev_addr
 # Also docs/index.md is a symbolic link to the project's README.md

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 Roy Wright
+SPDX-License-Identifier: MIT
+-->
+
 # Check PyProject
 
 Check that [project] and [tool.poetry] tables are in-sync in the
