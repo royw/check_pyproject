@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+mode = "local"
+project = ""
+shell = ""
+
+[dirs]
+project = []
+python = "isolated"
+data = "/home/royw/.local/share/hatch"
+cache = "/home/royw/.cache/hatch"
+
+[dirs.env]
+virtual = ".hatch"
+
+
+[projects]
+
+[publish.index]
+repo = "main"
+
+[template]
+name = "Roy Wright"
+email = "roy@wright.org"
+
+[template.licenses]
+headers = true
+default = [
+    "MIT",
+]
+
+[template.plugins.default]
+tests = true
+ci = false
+src-layout = true
+
+[terminal.styles]
+info = "bold"
+success = "bold cyan"
+error = "bold red"
+warning = "bold yellow"
+waiting = "bold magenta"
+debug = "bold"
+spinner = "simpleDotsScrolling"
