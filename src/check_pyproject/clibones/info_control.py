@@ -2,12 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
+from __future__ import annotations
+
 import importlib
-from argparse import ArgumentParser
 from dataclasses import dataclass
+from importlib.metadata import version
+from typing import TYPE_CHECKING
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    import argparse
+    from argparse import ArgumentParser
 
 
 @dataclass
@@ -58,9 +64,13 @@ class InfoControl:
 
         :return: the version string or DEFAULT_VERSION
         """
-        try:
-            if self.app_package:
-                return __import__(self.app_package).version
-        except (ImportError, AttributeError):
-            logger.info(f"Could not import {self.app_package}.version")
+        if self.app_package:
+            try:
+                return version(self.app_package)
+            except ImportError:
+                logger.warning(f"Could not get metadata for {self.app_package}")
+                try:
+                    return __import__(self.app_package).version
+                except (ImportError, AttributeError):
+                    logger.warning(f"Could not import {self.app_package}.version")
         return InfoControl.DEFAULT_VERSION
