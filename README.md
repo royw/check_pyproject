@@ -5,6 +5,27 @@ SPDX-License-Identifier: MIT
 
 # Check PyProject
 
+[![PyPI - Version](https://img.shields.io/pypi/v/check_pyproject.svg)](https://pypi.org/project/check_pyproject)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/check_pyproject.svg)](https://pypi.org/project/check_pyproject)
+
+-----
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Workflows](#workflows)
+  - [Tasks](#tasks)
+  - [Adding a dependency](#adding-a-dependency)
+- [License](#license)
+- [References](#references)
+  - [Build tools](#build-tools)
+    - [FawltyDeps](#fawltydeps)
+  - [Documentation tools](#documentation-tools)
+
+## Overview
+
 Check that [project] and [tool.poetry] tables are in-sync in the
 `pyproject.toml` file.
 
@@ -39,11 +60,9 @@ tables, is roughly in-sync.
 
   `sudo nala install tk-dev libbz2-dev libreadline-dev libsqlite3-dev lzma-dev python3-tk libreadline-dev`
 
-## Usage
+## Installation
 
-Two usages:
-
-1. Install the package using your favorite dev tool. Examples:
+Install the package using your favorite dev tool. Examples:
 
    - `git clone git@github.com:royw/check_pyproject.git`
    - `cd check_pyproject`
@@ -53,10 +72,6 @@ Two usages:
 
    then cd to your project and run: `check_pyproject`
 
-2. Or just copy src/check_pyproject_toml.py to your project's bin directory and
-   run it:
-
-   `python ./bin/check_pyproject_toml.py`
 
 ## Workflows
 
@@ -90,6 +105,10 @@ can copy and paste into the [project] table's appropriate dependency.
 
 Should pass this time.
 
+## License
+
+`check_pyproject` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+
 ## References
 
 - The [Python Packaging User Guide](https://packaging.python.org/en/latest)
@@ -112,7 +131,7 @@ Should pass this time.
   checker for Python that finds undeclared and/or unused 3rd-party dependencies
   in your Python project.
 
-### FawltyDeps
+#### FawltyDeps
 
 This tool does a great job in helping keep bloat out of your project. There is
 one small issue with it, it does not distinguish project dependencies from
