@@ -31,6 +31,14 @@ tasks:
       - poetry update
       - poetry run python3 -m check_pyproject --loglevel DEBUG
 
+  check_licenses:
+    desc: Check that all dependency licenses are acceptable for this project
+    cmds:
+      # check licenses
+      - poetry run -- liccheck -s pyproject.toml
+      # create software bill of materials
+      - poetry run -- reuse spdx -o reuse.spdx
+
   build:
     desc: Perform normal build workflow
     cmds:
@@ -57,6 +65,8 @@ tasks:
       - task: tests
       # generate code metrics
       - task: metrics
+      # check that all dependency licenses are acceptable
+      - task: check_licenses
       # actually run the built application, getting its version
       - task: version
 
