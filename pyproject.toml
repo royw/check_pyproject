@@ -46,7 +46,7 @@ requires-python = ">=3.11"
 # pyproject.toml to the file which contains the license for the project. Tools MUST assume the file’s
 # encoding is UTF-8. The text key has a string value which is the license of the project. These keys are
 # mutually exclusive, so a tool MUST raise an error if the metadata specifies both keys.
-license = {file = "LICENSE.txt"}
+license = {file = "LICENSES/MIT.txt"}
 
 # TOML type: Array of inline tables with string keys and values
 # The people or organizations considered to be the “authors” of the project. The exact meaning is open to
@@ -117,8 +117,8 @@ scripts = {'check_pyproject' = "check_pyproject.__main__:main"}
 # Also note a different grammar is required for version specification
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
+  "pathvalidate<4.0.0,>=3.2.0",
   "packaging>=24.0.0, <25.0.0",
-  "pathvalidate<4.0.0,>=3.2.0"
 ]
 
 # TOML type: a table with values of arrays of PEP 508 strings (optional-dependencies)
@@ -359,7 +359,6 @@ ignore_unused = ["radon", "pytest-cov", "pytest", "tox", "fawltydeps", "mkdocs",
 output_format = "human_detailed"  # Detailed report by default
 
 [tool.coverage.run]
-#source = ["check_pyproject"]
 source_pkgs = ["check_pyproject"]
 branch = true
 parallel = true
@@ -470,8 +469,8 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.11"
 loguru = "^0.7.2"
-packaging = "^24.0"
 pathvalidate = "^3.2.0"
+packaging = "^24.0"
 
 # You can organize your dependencies in groups to manage them in a more granular way.
 [tool.poetry.group.dev.dependencies]
