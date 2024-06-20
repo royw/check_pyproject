@@ -8,6 +8,7 @@ tasks:
   init:
     desc: Initialize the project for using poetry
     cmds:
+      - task: switch-to-hatch
       - hatch env show
 
   lint:
@@ -27,7 +28,8 @@ tasks:
     cmds:
       - hatch -e dev run -- python3 -m check_pyproject --loglevel DEBUG
 
-  setup_env:
+  build:
+    desc: Perform normal build workflow
     cmds:
       # validate the pyproject.toml file
       - hatch run -- dev:validate-pyproject pyproject.toml
@@ -35,17 +37,19 @@ tasks:
       - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
       # show project's environment
       - hatch env show
-
-  build:
-    desc: Perform normal build workflow
-    cmds:
-      - task: setup_env
+      # format the source code
       - task: format
+      # check for programming errors/warnings
       - task: lint
+      # create dist packages
       - hatch -e dev build
+      # update development virtual environment
       - hatch -e dev run pip install --no-deps -e .
+      # run unit tests
       - task: tests
+      # generate code metrics
       - task: metrics
+      # actually run the built application, getting its version
       - task: version
 
   version:
@@ -70,10 +74,11 @@ tasks:
       - hatch run test:test
 
   docs:
+    desc: Create the project documentation
     cmds:
       - hatch run docs:build
-      - hatch run docs:serve
-      - open localhost:8000
+      # start server and open browser at localhost:8000
+      - hatch run docs:serve --open
 
   clean:
     desc: Remove virtual environments and generated files

@@ -8,7 +8,9 @@ tasks:
   init:
     desc: Initialize the project for using poetry
     cmds:
-      - hatch env show
+      - task: switch-to-poetry
+      - poetry env list
+      - poetry env info
 
   lint:
     desc: Perform static code analysis
@@ -29,7 +31,8 @@ tasks:
       - poetry update
       - poetry run python3 -m check_pyproject --loglevel DEBUG
 
-  setup_env:
+  build:
+    desc: Perform normal build workflow
     cmds:
       # validate the pyproject.toml file
       - poetry check
@@ -42,16 +45,19 @@ tasks:
       # show project's environment
       - poetry env list
       - poetry env info
-
-  build:
-    desc: Perform normal build workflow
-    cmds:
-      - task: setup_env
+      # format the source code
       - task: format
+      # check for programming errors/warnings
       - task: lint
+      # create dist packages
       - poetry build
+      # update development virtual environment
+      - poetry install
+      # run unit tests
       - task: tests
+      # generate code metrics
       - task: metrics
+      # actually run the built application, getting its version
       - task: version
 
   version:
@@ -76,10 +82,11 @@ tasks:
       - poetry run tox
 
   docs:
+    desc: Create the project documentation
     cmds:
       - poetry run mkdocs build
-      - poetry run mkdocs serve
-      - open localhost:8000
+      # start server and open browser at localhost:8000
+      - poetry run mkdocs serve --open
 
   clean:
     desc: Remove virtual environments and generated files
