@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
 [![PyPI - Version](https://img.shields.io/pypi/v/check_pyproject.svg)](https://pypi.org/project/check_pyproject)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/check_pyproject.svg)](https://pypi.org/project/check_pyproject)
 
------
+---
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ SPDX-License-Identifier: MIT
 - [Installation](#installation)
 - [Workflows](#workflows)
   - [Tasks](#tasks)
-  - [Switching between Poetry and Hatch](#switching-between-poetry-and-hatch) 
+  - [Switching between Poetry and Hatch](#switching-between-poetry-and-hatch)
   - [Adding a dependency using poetry](#adding-a-dependency-using-poetry)
   - [Adding a dependency using hatch](#adding-a-dependency-using-hatch)
 - [License](#license)
@@ -49,36 +49,38 @@ tables, is roughly in-sync.
 
 ## Prerequisites
 
-* Install the task manager: [Task](https://taskfile.dev/)
-* Optionally install [Poetry](https://python-poetry.org/)
-* Optionally install [Hatch](https://hatch.pypa.io/)
-* Optionally install [pyenv-installer](https://github.com/pyenv/pyenv-installer)
-  * Install dependent pythons, example:
-  
+- Install the task manager: [Task](https://taskfile.dev/)
+- Optionally install [Poetry](https://python-poetry.org/)
+- Optionally install [Hatch](https://hatch.pypa.io/)
+- Optionally install [pyenv-installer](https://github.com/pyenv/pyenv-installer)
+
+  - Install dependent pythons, example:
+
     `pyenv local 3.11.9 3.12.3`
 
-_Note you may need to install some libraries for the pythons to compile 
+_Note you may need to install some libraries for the pythons to compile
 cleanly._ _For example on ubuntu (note I prefer `nala` over `apt`):_
 
-  `sudo nala install tk-dev libbz2-dev libreadline-dev libsqlite3-dev lzma-dev python3-tk libreadline-dev`
+`sudo nala install tk-dev libbz2-dev libreadline-dev libsqlite3-dev lzma-dev python3-tk libreadline-dev`
 
 ## Installation
 
 Install the package using your favorite dev tool. Examples:
 
-   - `git clone git@github.com:royw/check_pyproject.git`
-   - `cd check_pyproject`
-   - `git init .`
-   - `git add .`
-   - `git commit -m "initial clibones cookie"`
-   - `task init`
-   - `task build`
-   - Install check_pyproject: `pip install dest/check_pyproject-*.whl`
+- `git clone git@github.com:royw/check_pyproject.git`
+- `cd check_pyproject`
+- `git init .`
+- `git add .`
+- `git commit -m "initial clibones cookie"`
+- `task init`
+- `task build`
+- Install check_pyproject: `pip install dest/check_pyproject-*.whl`
 
 then cd to your project and run: `check_pyproject`
 
-_Note, if you do not initialize git in the new project and add at least the .gitignore file, 
-then `reuse` will be unable to honor `.gitignore` and will spew a few errors, causing the build to fail._
+_Note, if you do not initialize git in the new project and add at least the
+.gitignore file, then `reuse` will be unable to honor `.gitignore` and will spew
+a few errors, causing the build to fail._
 
 ## Workflows
 
@@ -103,11 +105,11 @@ Two tasks support switching the build system:
     task switch-to-poetry
     task switch-to-hatch
 
-They set the symbolic link for `Taskfile.yml` to either `Taskfile-poetry.yml`
-or `Taskfile-hatch.yml`.
- 
-And they edit the `build-system` table in the `pyproject.toml` file to
-the appropriate back-end.
+They set the symbolic link for `Taskfile.yml` to either `Taskfile-poetry.yml` or
+`Taskfile-hatch.yml`.
+
+And they edit the `build-system` table in the `pyproject.toml` file to the
+appropriate back-end.
 
 ### Adding a dependency using poetry
 
@@ -116,9 +118,9 @@ Add the dependency using the poetry CLI.
     poetry add --group dev some_tool
     task build
 
-The build ought to fail as the [project] and [tool.poetry] dependencies are now out of sync.  But the
-output includes the PEP 508 dependency just added that you can copy and paste into the [project] table's
-appropriate dependency.
+The build ought to fail as the [project] and [tool.poetry] dependencies are now
+out of sync. But the output includes the PEP 508 dependency just added that you
+can copy and paste into the [project] table's appropriate dependency.
 
     task build
 
@@ -126,17 +128,17 @@ Should pass this time.
 
 ### Adding a dependency using hatch
 
-Manually edit the `pyproject.toml` file and add the dependency to both the [project] and [tool.poetry] dependency tables.
-Then running
+Manually edit the `pyproject.toml` file and add the dependency to both the
+[project] and [tool.poetry] dependency tables. Then running
 
     task build
 
 Will show any version specifier mismatches...
 
-
 ## License
 
-`check_pyproject` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`check_pyproject` is distributed under the terms of the
+[MIT](https://spdx.org/licenses/MIT.html) license.
 
 ## References
 
@@ -154,12 +156,12 @@ Will show any version specifier mismatches...
 - [pathvalidate](https://pathvalidate.readthedocs.io)
 - [tox](https://tox.wiki) multiple python testing.
 - [radon](https://radon.readthedocs.io) code metrics.
-- [Ruff](https://docs.astral.sh/ruff/) is an extremely fast Python linter and code formatter, written 
-  in Rust.
-- [FawltyDeps](https://github.com/tweag/FawltyDeps) is a dependency checker 
-  for Python that finds undeclared and/or unused 3rd-party dependencies in 
-  your Python project.
-- [Reuse](https://reuse.readthedocs.io/) is a tool for compliance with the 
+- [Ruff](https://docs.astral.sh/ruff/) is an extremely fast Python linter and
+  code formatter, written in Rust.
+- [FawltyDeps](https://github.com/tweag/FawltyDeps) is a dependency checker for
+  Python that finds undeclared and/or unused 3rd-party dependencies in your
+  Python project.
+- [Reuse](https://reuse.readthedocs.io/) is a tool for compliance with the
   [REUSE](https://reuse.software/) recommendations.
 
 #### FawltyDeps

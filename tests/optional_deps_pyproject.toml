@@ -128,7 +128,6 @@ dev = [
   "dparse>=0.6.3, <0.7.0",
   "safety>=3.2.0, <4.0.0",
   "parsley>=1.3.0, <2.0.0",
-  "versio>=0.5.0, <0.6.0",
   "check-pyproject@git+https://github.com:royw/check_pyproject.git",
   'validate-pyproject[all]<0.18.0,>=0.17.0'
 ]
@@ -263,7 +262,6 @@ validate-pyproject = {extras = ["all"], version = "^0.17"}
 dparse = "^0.6.3"
 safety = "^3.2.0"
 parsley = "^1.3"
-versio = "^0.5.0"
 black = "^24.3.0"
 pytest = "^8.1.1"
 tox = "^4.14.2"

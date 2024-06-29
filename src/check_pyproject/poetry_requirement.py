@@ -68,11 +68,10 @@ def wildcard_requirement_to_pep508(specification: str) -> str:
     version_string: str = specification.rstrip("*").rstrip(".")  # ex: "1", "1.2"
     ver: Version = Version(version_string)
 
-    match len(ver.release):
-        case 1:
-            ver = VersionUtils.bump_major_version(ver)
-        case 2:
-            ver = VersionUtils.bump_minor_version(ver)
+    if len(ver.release) == 1:
+        ver = VersionUtils.bump_major_version(ver)
+    elif len(ver.release) == 2:
+        ver = VersionUtils.bump_minor_version(ver)
 
     return str(
         SpecifierSet(
@@ -82,7 +81,9 @@ def wildcard_requirement_to_pep508(specification: str) -> str:
     )
 
 
-def convert_poetry_specifier_to_pep508(value: str | dict, *, max_bounds: bool = True, quotes: bool = False) -> str:
+def convert_poetry_specifier_to_pep508(
+    value: str | dict[str, str], *, max_bounds: bool = True, quotes: bool = False
+) -> str:
     """
     Convert poetry dependency specifiers (^v.v, ~ v.v, v.*, <=v, > v, != v) to pep508 format
     returns a string containing comma separated pep508 specifiers

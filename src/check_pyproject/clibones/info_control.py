@@ -70,7 +70,7 @@ class InfoControl:
             except ImportError:
                 logger.warning(f"Could not get metadata for {self.app_package}")
                 try:
-                    return __import__(self.app_package).version
+                    return str(__import__(self.app_package).version)
                 except (ImportError, AttributeError):
                     logger.warning(f"Could not import {self.app_package}.version")
         return InfoControl.DEFAULT_VERSION

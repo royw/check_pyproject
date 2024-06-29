@@ -57,14 +57,14 @@ def set_field(value: list[str]) -> set[str]:
     return set(value)
 
 
-def author_field(value: list[str] | list[dict[str]]) -> set[str]:
+def author_field(value: list[str] | list[dict[str, str]]) -> set[str]:
     """
-    Callback to convert auther/maintainer fields into project table's format:
+    Callback to convert author/maintainer fields into project table's format:
     full name <email@example.com>
 
     returns: set of project table style "user <email>" strings'
     """
-    out: set = set()
+    out: set[str] = set()
     if isinstance(value, list):
         for v in value:
             if isinstance(v, str):
@@ -77,15 +77,15 @@ def author_field(value: list[str] | list[dict[str]]) -> set[str]:
 
 
 def check_fields(
-    callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list, toml_data: dict[str, Any]
+    callback: Callable[[Any], str | set[str] | set[Requirement]], fields: list[str], toml_data: dict[str, Any]
 ) -> int:
     """
     Check the "project" and "tools.poetry" fields for existence, and equality.
     Returns the number of problems detected
     """
     number_of_problems: int = 0
-    project_data: dict = toml_data["project"]
-    poetry_data: dict = toml_data["tool"]["poetry"]
+    project_data: dict[str, Any] = toml_data["project"]
+    poetry_data: dict[str, Any] = toml_data["tool"]["poetry"]
 
     for field in fields:
         if field in project_data:
@@ -130,21 +130,22 @@ def format_diff_values(
         # format the "a vs b" then replace any "set()" with "{ }" and replace single quotes with double quotes
         return f"project: {aa_str}\nvs\npoetry: {bb_str}".replace("set()", "{ }").replace("'", '"')
 
-    if isinstance(project_data, str):
+    if isinstance(project_data, str) and isinstance(poetry_data, str):
         return f'"{project_data}"\nvs.\n"{poetry_data}"'
-    if isinstance(project_data, dict):
+    if isinstance(project_data, dict) and isinstance(poetry_data, dict):
         a = {key + "=" + project_data[key] for key in project_data}
         b = {key + "=" + poetry_data[key] for key in poetry_data}
         return set_vs_set(a.difference(b), b.difference(a))
-    if isinstance(project_data, list):
+    if isinstance(project_data, list) and isinstance(poetry_data, list):
         a = set(project_data).difference(set(poetry_data))
         b = set(poetry_data).difference(set(project_data))
         return set_vs_set(a, b)
-    if isinstance(project_data, set):
+    if isinstance(project_data, set) and isinstance(poetry_data, set):
         a = {str(data) for data in project_data}
         b = {str(data) for data in poetry_data}
         return set_vs_set(a.difference(b), b.difference(a))
-    raise TypeError("Unexpected type " + type(project_data))
+    errmsg: str = f"Unexpected type {type(project_data)}"
+    raise TypeError(errmsg)
 
 
 def check_python_version(toml_data: dict[str, Any]) -> int:
@@ -284,7 +285,7 @@ def build_bzr_url(package_name: str, package_value: dict[str, str], value: str) 
     return url
 
 
-def build_vcs_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+def build_vcs_url(package_name: str, package_value: dict[str, Any]) -> set[Requirement]:
     """
     Supported VCS: https://hatch.pypa.io/latest/config/dependency/#supported-vcs
     Note order is important because we will check if vcs is in the url (i.e. substring search)
@@ -318,16 +319,17 @@ def add_leftover_markers_to_url(url: str, package_value: dict[str, str], separat
     markers: set[str] = {mark for mark in package_value if mark not in explicitly_handled_markers}
 
     if markers:
-        url: str = f"{url}"
+        _url: str = f"{url}"
         for marker in markers:
             if marker == "markers":
-                url += f"{separator}{package_value[marker]}"
+                _url += f"{separator}{package_value[marker]}"
             else:
-                url += f"{separator}{marker}={package_value[marker]}"
+                _url += f"{separator}{marker}={package_value[marker]}"
+        return _url
     return url
 
 
-def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str], separator: str = ";") -> str:
+def add_markers_to_url(url: str, package_name: str, package_value: dict[str, Any], separator: str = ";") -> str:
     """add markers to the url"""
     if "extras" in package_value:
         value = str(package_value["extras"]).replace("'", "")
@@ -341,7 +343,7 @@ def add_markers_to_url(url: str, package_name: str, package_value: dict[str, str
     return add_leftover_markers_to_url(url, package_value, separator)
 
 
-def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+def build_dict_url(package_name: str, package_value: dict[str, Any]) -> set[Requirement]:
     """create the url for non-version controlled system dependencies"""
     out: set[Requirement] = set()
 
@@ -363,7 +365,7 @@ def build_dict_url(package_name: str, package_value: dict[str, str]) -> set[Requ
     return out
 
 
-def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set[Requirement]:
+def dict_to_requirement(package_name: str, package_value: dict[str, Any]) -> set[Requirement]:
     """
     Converts a dictionary to a requirement
     Examples:
@@ -385,7 +387,7 @@ def dict_to_requirement(package_name: str, package_value: dict[str, str]) -> set
     return out
 
 
-def list_to_requirement(key: str, values: list[str | dict[str, str]]) -> set[Requirement]:
+def list_to_requirement(key: str, values: list[str] | list[dict[str, str]]) -> set[Requirement]:
     """
     Examples:
          foo1 = [
@@ -411,7 +413,9 @@ def list_to_requirement(key: str, values: list[str | dict[str, str]]) -> set[Req
     return out
 
 
-def to_poetry_requirements(dependencies: dict[str, str | dict[str, str] | list[dict[str, str]]]) -> set[Requirement]:
+def to_poetry_requirements(
+    dependencies: dict[str, str | dict[str, str | list[str]] | list[dict[str, str]]],
+) -> set[Requirement]:
     """
     Convert given poetry dependencies to a set of requirements.  Poetry dependencies can be:
     key - str,
