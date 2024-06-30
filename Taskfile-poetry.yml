@@ -15,8 +15,10 @@ tasks:
   lint:
     desc: Perform static code analysis
     cmds:
-      - poetry run ruff check --config pyproject.toml --fix src tests
-      - poetry run fawltydeps --detailed || true
+      - poetry run -- ruff check --config pyproject.toml --fix src tests
+      - poetry run -- mypy --strict --python-version 3.11 src/ tests/
+      - poetry run -- mypy --strict --python-version 3.12 src/ tests/
+      - poetry run -- fawltydeps --detailed || true
       - poetry run -- reuse lint
 
   format:

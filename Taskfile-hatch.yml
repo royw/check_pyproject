@@ -6,7 +6,7 @@ version: "3"
 
 tasks:
   init:
-    desc: Initialize the project for using poetry
+    desc: Initialize the project for using hatch
     cmds:
       - task: switch-to-hatch
       - hatch env show
@@ -15,6 +15,8 @@ tasks:
     desc: Perform static code analysis
     cmds:
       - hatch run -- dev:ruff check --config pyproject.toml --fix src tests
+      - hatch -e dev run -- mypy --strict --python-version 3.11 src/ tests/
+      - hatch -e dev run -- mypy --strict --python-version 3.12 src/ tests/
       - hatch run -- dev:fawltydeps --detailed || true
       - hatch -e dev run -- reuse lint
 
