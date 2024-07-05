@@ -137,10 +137,10 @@ tasks:
       - hatch run -- test:test
 
   coverage:
-    desc:
-      Run the unit tests with coverage - hatch run -- test:pytest --cov-report
-      term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject
-      tests
+    desc: Run the unit tests with coverage
+    cmds:
+      - hatch run -- test:pytest --cov-report term-missing --cov-report
+        json:metrics/coverage.json --cov=check_pyproject tests
 
   docs:
     desc: Create the project documentation and open in the browser

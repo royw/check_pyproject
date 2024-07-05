@@ -141,9 +141,10 @@ tasks:
       - poetry run -- tox
 
   coverage:
-    desc:
-      Run the unit tests with coverage - poetry run -- pytest --cov-report
-      term-missing --cov-report json:metrics/coverage.json --cov=clibones tests
+    desc: Run the unit tests with coverage
+    cmds:
+      - poetry run -- pytest --cov-report term-missing --cov-report
+        json:metrics/coverage.json --cov=clibones tests
 
   docs:
     desc: Create the project documentation and open in the browser
