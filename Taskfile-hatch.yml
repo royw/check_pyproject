@@ -1,15 +1,36 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
 version: "3"
 
 tasks:
+  show-env:
+    cmds:
+      - hatch env show
+
+  update-venv:
+    cmds:
+      # update development virtual environment
+      - hatch -e dev run pip install --upgrade pip
+      - hatch -e dev run pip install --no-deps -e .
+
+  validate-pyproject:
+    cmds:
+      # validate the pyproject.toml file
+      - hatch run -- dev:validate-pyproject pyproject.toml
+
+  check-pyproject:
+    cmds:
+      # check that project and tool.poetry tables are in sync
+      - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
+
   init:
     desc: Initialize the project for using hatch
     cmds:
       - task: switch-to-hatch
-      - hatch env show
+      - task: show-env
 
   lint:
     desc: Perform static code analysis
@@ -19,48 +40,75 @@ tasks:
       - hatch -e dev run -- mypy --strict --python-version 3.12 src/ tests/
       - hatch run -- dev:fawltydeps --detailed || true
       - hatch -e dev run -- reuse lint
+      - hatch run -- dev:pyupgrade --py311-plus
+      # Disallow improper capitalization
+      - scripts/fail_on_regex_match.sh "PyBind|Numpy|Cmake|CCache|Github|PyTest"
+      # lint shell scripts
+      - git ls-files -z -- "*.sh" | xargs -0 hatch -e dev run -- shellcheck
 
   format:
     desc: Check and reformat the code to a coding standard
     cmds:
       - hatch run -- dev:ruff format --config pyproject.toml src tests
+      - git ls-files -z -- '*.md' '*.py' | xargs -0 --verbose hatch -e dev run
+        -- blacken-docs
 
   check:
     desc: Run the raw project script on the project's pyproject.toml file.
     cmds:
       - hatch -e dev run -- python3 -m check_pyproject --loglevel DEBUG
 
-  check_licenses:
+  check-licenses:
     desc: Check that all dependency licenses are acceptable for this project
     cmds:
       # check licenses
       - hatch -e dev run -- liccheck -s pyproject.toml
+      # add any missing copyrights
+      - git diff --name-only --cached | xargs -I {} hatch -e dev run -- reuse
+        annotate -c "$(git config --get user.name) <$(git config --get
+        user.email)>" "{}"
       # create software bill of materials
       - hatch -e dev run -- reuse spdx -o reuse.spdx
 
-  build:
-    desc: Perform normal build workflow
+  pre-commit:
+    desc: Must pass before allowing version control commit
     cmds:
-      # validate the pyproject.toml file
-      - hatch run -- dev:validate-pyproject pyproject.toml
-      # check that project and tool.poetry tables are in sync
-      - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
-      # show project's environment
-      - hatch env show
+      - task: pre-commit-1
+      - task: pre-commit-2
+
+  pre-commit-1:
+    cmds:
+      - task: validate-pyproject
+      - task: update-venv
+      - task: check-pyproject
       # format the source code
       - task: format
       # check for programming errors/warnings
       - task: lint
-      # create dist packages
-      - hatch -e dev build
-      # update development virtual environment
-      - hatch -e dev run pip install --no-deps -e .
+
+  pre-commit-2:
+    cmds:
+      # generate code metrics
+      - task: check-licenses
       # run unit tests
       - task: tests
+
+  build:
+    desc: Perform normal build workflow
+    cmds:
+      # show project's environment
+      - task: show-env
+      - task: pre-commit-1
+      # create dist packages
+      - hatch -e dev build
+      - task: update-venv
+      - task: pre-commit-2
+      # generate unit test coverage reports
+      - task: coverage
       # generate code metrics
       - task: metrics
-      # check that all dependency licenses are acceptable
-      - task: check_licenses
+      # build documentation
+      - task: build-docs
       # actually run the built application, getting its version
       - task: version
 
@@ -85,17 +133,30 @@ tasks:
         --output-file=metrics/raw-metrics.json src/
 
   tests:
-    desc: Test the code
+    desc: Run the unit tests for the supported matrix
     cmds:
-      - hatch run -- test:pytest --cov-report term-missing --cov-report
-        json:metrics/coverage.json --cov=check_pyproject tests
-      - hatch run test:test
+      - hatch run -- test:test
+
+  coverage:
+    desc:
+      Run the unit tests with coverage - hatch run -- test:pytest --cov-report
+      term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject
+      tests
 
   docs:
-    desc: Create the project documentation
+    desc: Create the project documentation and open in the browser
+    cmds:
+      - task: build-docs
+      - task: serve-docs
+
+  build-docs:
+    desc: Build the documentation
     cmds:
       - hatch run docs:build
-      # start server and open browser at localhost:8000
+
+  serve-docs:
+    desc: Start the documentation server and open browser at localhost:8000
+    cmds:
       - hatch run docs:serve --open
 
   clean:
@@ -111,18 +172,20 @@ tasks:
   switch-to-hatch:
     desc: Switch development to use hatch instead of poetry
     cmds:
-      - hatch -e dev run python3 scripts/swap_build_system.py hatch
+      - hatch -e dev run -- python3 scripts/swap_build_system.py hatch
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-hatch.yml Taskfile.yml
+      - task: show-env
 
   switch-to-poetry:
     desc: Switch development to use poetry instead of hatch
     cmds:
-      - hatch -e dev run python3 scripts/swap_build_system.py poetry
+      - hatch -e dev run -- python3 scripts/swap_build_system.py poetry
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-poetry.yml Taskfile.yml
       - poetry lock
       - poetry install
+      - task: show-env
 
   main:
     desc: Run the __main__ module code, passes arguments to the module

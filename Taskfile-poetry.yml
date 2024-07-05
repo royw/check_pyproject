@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
@@ -41,8 +42,13 @@ tasks:
       # create software bill of materials
       - poetry run -- reuse spdx -o reuse.spdx
 
-  build:
-    desc: Perform normal build workflow
+  pre-commit:
+    desc: Must pass before allowing version control commit
+    cmds:
+      - task: pre-commit-1
+      - task: pre-commit-2
+
+  pre-commit-1:
     cmds:
       # validate the pyproject.toml file
       - poetry check
@@ -61,14 +67,27 @@ tasks:
       - task: lint
       # create dist packages
       - poetry build
-      # update development virtual environment
-      - poetry install
-      # run unit tests
-      - task: tests
-      # generate code metrics
-      - task: metrics
+
+  pre-commit-2:
+    cmds:
       # check that all dependency licenses are acceptable
       - task: check_licenses
+      # run unit tests
+      - task: tests
+
+  build:
+    desc: Perform normal build workflow
+    cmds:
+      - task: pre-commit-1
+      # update development virtual environment
+      - poetry run pip install --upgrade pip
+      - poetry install
+      - task: pre-commit-2
+      - task: coverage
+      # generate code metrics
+      - task: metrics
+      # build documentation
+      - task: build-docs
       # actually run the built application, getting its version
       - task: version
 
@@ -92,17 +111,30 @@ tasks:
       - poetry run radon raw --json --output-file=metrics/raw-metrics.json src/
 
   tests:
-    desc: Test the code
+    desc: Run the unit tests for the supported versions
     cmds:
-      - poetry run pytest --cov-report term-missing --cov-report
-        json:metrics/coverage.json --cov=check_pyproject tests
       - poetry run tox
 
+  coverage:
+    desc:
+      Run the unit tests with coverage - poetry run pytest --cov-report
+      term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject
+      tests
+
   docs:
-    desc: Create the project documentation
+    desc: Create the project documentation and open in the browser
+    cmds:
+      - task: build-docs
+      - task: serve-docs
+
+  build-docs:
+    desc: Build the documentation
     cmds:
       - poetry run mkdocs build
-      # start server and open browser at localhost:8000
+
+  serve-docs:
+    desc: Start the documentation server and open browser at localhost:8000
+    cmds:
       - poetry run mkdocs serve --open
 
   clean:

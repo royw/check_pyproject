@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
@@ -52,9 +53,7 @@ class ApplicationSettings(ABC):
             }
 
             def __init__(self):
-                super(MySettings, self).__init__(
-                    "App Name", "app_package", "app_description", ["APP Section"]
-                )
+                super(MySettings, self).__init__("App Name", "app_package", "app_description", ["APP Section"])
 
             def add_arguments(parser):
                 parser.add_argument("--foo", action="store_true", help=HELP["foo"])

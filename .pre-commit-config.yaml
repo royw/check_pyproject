@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,21 +12,10 @@ ci:
   autofix_commit_msg: "style: pre-commit fixes"
 
 repos:
-  - repo: https://github.com/fsfe/reuse-tool
-    rev: v3.1.0a1
-    hooks:
-      - id: reuse
-
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.16.0
-    hooks:
-      - id: pyupgrade
-
-  - repo: https://github.com/adamchainz/blacken-docs
-    rev: "1.16.0"
-    hooks:
-      - id: blacken-docs
-        additional_dependencies: [black==24.*]
+  #  - repo: https://github.com/fsfe/reuse-tool
+  #    rev: v3.1.0a1
+  #    hooks:
+  #      - id: reuse
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v4.6.0"
@@ -57,32 +47,18 @@ repos:
         types_or: [yaml, markdown, html, css, scss, javascript, json]
         args: [--prose-wrap=always]
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.5.0"
-    hooks:
-      - id: ruff
-        args: ["--fix", "--show-fixes"]
-      - id: ruff-format
-
+  #  - repo: https://github.com/astral-sh/ruff-pre-commit
+  #    rev: "v0.5.0"
+  #    hooks:
+  #      - id: ruff
+  #        args: [ "--fix", "--show-fixes" ]
+  #      - id: ruff-format
+  #
   - repo: local
     hooks:
-      - id: show_changed_files
-        name: show_changed_files
-        entry: "echo '=>' "
-        pass_filenames: true
-        language: python
-        # use your preferred Python version
-        language_version: python3.12
-        types: [python]
-        verbose: true
-
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        entry:
-          "hatch -e dev run -- MYPYPATH=src mypy --explicit-package-bases
-          --strict --python-version=3.12 --package check_pyproject"
+      - id: task_pre_commit
+        name: task_pre_commit
+        entry: task pre-commit
         pass_filenames: false
         language: python
         # use your preferred Python version
@@ -94,25 +70,6 @@ repos:
     rev: "v2.3.0"
     hooks:
       - id: codespell
-
-  #  - repo: https://github.com/shellcheck-py/shellcheck-py
-  #    rev: "v0.10.0.1"
-  #    hooks:
-  #      - id: shellcheck
-  #
-  - repo: local
-    hooks:
-      - id: disallow-caps
-        name: Disallow improper capitalization
-        language: pygrep
-        entry: PyBind|Numpy|Cmake|CCache|Github|PyTest
-        exclude: .pre-commit-config.yaml
-
-  - repo: https://github.com/abravalheri/validate-pyproject
-    rev: "v0.18"
-    hooks:
-      - id: validate-pyproject
-        additional_dependencies: ["validate-pyproject-schema-store[all]"]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: "0.28.6"

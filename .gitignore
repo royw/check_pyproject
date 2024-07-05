@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +8,7 @@ dist/
 metrics/
 site/
 .tox/
+.nox/
 .coverage
 **/__pycache__/*.pyc
 reuse.spdx

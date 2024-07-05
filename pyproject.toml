@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Roy Wright
+# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
 
@@ -140,7 +141,9 @@ dev = [
   "flict<2.0.0,>=1.2.14",
   "pre-commit<4.0.0,>=3.7.1",
   "mypy<2.0.0,>=1.10.1",
-  "check-pyproject@git+https://github.com/royw/check_pyproject.git",
+  "blacken-docs<2.0.0,>=1.18.0",
+  "pyupgrade<4.0.0,>=3.16.0",
+  "shellcheck-py<0.11.0,>=0.10.0.1",
 ]
 test = [
   "pytest>=8.1.1, <9.0.0",
@@ -293,41 +296,90 @@ module = "check_pyproject.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
-### ruff linter/formatter
+### ruff linter/formatter: https://docs.astral.sh/ruff/settings
 
 [tool.ruff]
-src = ["src"]
-exclude = [".tox", "dist", "docs", "metrics", "scripts", "site"]
+# Allow imports relative to the "src" and "tests" directories.
+src = ["src", "tests"]
+# In addition to the standard set of exclusions, omit these.
+extend-exclude = [".tox", "dist", "docs", "metrics", "scripts", "site"]
 # Set the maximum line length to 119.
 line-length = 119
+# fix lint issues.
+fix = true
+# Enumerate all fixed violations.
+show-fixes = true
+
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+
 
 [tool.ruff.lint]
 # Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
 # overlap with the use of a formatter, like Black, but we can override this behavior by
 # explicitly adding the rule.
+# https://docs.astral.sh/ruff/rules
 # extend-select = ["E501"]
 extend-select = [
-  "B",        # flake8-bugbear
+  #"F",        # pyflakes
+  #"E",        # pycodestyle Error
+  #"W",        # pycodestyle Warning
+  "C901",     # mccade
   "I",        # isort
-  "ARG",      # flake8-unused-arguments
-  "C4",       # flake8-comprehensions
-  "EM",       # flake8-errmsg
-  "ICN",      # flake8-import-conventions
-  "G",        # flake8-logging-format
-  "PGH",      # pygrep-hooks
-  "PIE",      # flake8-pie
-  "PL",       # pylint
-  "PT",       # flake8-pytest-style
-  "PTH",      # flake8-use-pathlib
-  "RET",      # flake8-return
-  "RUF",      # Ruff-specific
-  "SIM",      # flake8-simplify
-  "T20",      # flake8-print
+  "N",        # pep8-naming
+  #"D",        # pydocstyle
   "UP",       # pyupgrade
   "YTT",      # flake8-2020
+  #"ANN",      # flake8-annotations
+  #"ASYNC",    # flake8-async
+  #"S",        # flake8-bandit
+  #"BLE",      # flake8-blind-except
+  #"FBT",      # flake8-boolean-trap
+  "B",        # flake8-bugbear
+  #"A",        # flake8-builtins
+  #"COM",      # flake8-commas
+  #"CPY",      # flake8-copyright
+  "C4",       # flake8-comprehensions
+  #"DTZ",      # flake8-datetimez
+  #"T10",      # flake8-debugger
+  #"DJ",       # flake8-django
+  "EM",       # flake8-errmsg
   "EXE",      # flake8-executable
-  "NPY",      # NumPy specific rules
+  #"FA",       # flake8-future-annotations
+  #"ICS",      # flake8-implicit-str-concat
+  "ICN",      # flake8-import-conventions
+  "LOG",      # flake8-logging (added 7/4/24)
+  "G",        # flake8-logging-format
+  "INP",      # flake8-no-pep420 (added 7/4/24)
+  "PIE",      # flake8-pie
+  "T20",      # flake8-print
+  #"PYI",      # flake8-pyi
+  "PT",       # flake8-pytest-style
+  #"Q",        # flake8-quotes
+  #"RSE",      # flake8-raise
+  "RET",      # flake8-return
+  #"SLF",      # flake8-self
+  #"SLOT",     # flake8-slot
+  "SIM",      # flake8-simplify
+  #"TID",      # flake8-tidy
+  #"TCH",      # flake8-type-checking
+  #"INT",      # flake8-gettest
+  "ARG",      # flake8-unused-arguments
+  "PTH",      # flake8-use-pathlib
+  #"TD",       # flake8-todos
+  #"FIX",      # flake8-fixme
+  #"ERA",      # eradicate
   "PD",       # pandas-vet
+  "PGH",      # pygrep-hooks
+  "PL",       # pylint
+  #"TRY",      # tryceratops
+  #"FLY",      # flynt
+  "NPY",      # NumPy specific rules
+  #"AIR",      # airflow
+  #"PERF",     # perflint
+  #"FURB",     # refurb
+  "RUF",      # Ruff-specific
 ]
 ignore = [
   "PLR09",    # Too many <...>
@@ -364,6 +416,7 @@ ignore_unused = ["radon", "pytest-cov", "pytest", "tox", "fawltydeps", "mkdocs",
   "mkdocs-literate-nav", "mkdocs-section-index", "ruff", "mkdocs-material", "mkdocs-gen-files",
   "flict", "furo", "liccheck", "mypy", "myst-parser", "pre-commit", "reuse", "sphinx",
   "sphinx-autodoc-typehints", "sphinx-copybutton", "sphinx_copybutton", "tomlkit", "validate-pyproject",
+  "blacken-docs", "pyupgrade",
 ]
 output_format = "human_detailed"  # Detailed report by default
 
@@ -495,6 +548,9 @@ tomlkit = "^0.12.5"
 liccheck = "^0.9.2"
 flict = "^1.2.14"
 mypy = "^1.10.1"
+blacken-docs = "^1.18.0"
+pyupgrade = "^3.16.0"
+shellcheck-py = "^0.10.0.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"
