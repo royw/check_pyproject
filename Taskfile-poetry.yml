@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2024 Roy Wright
 # SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
@@ -6,12 +5,34 @@
 version: "3"
 
 tasks:
+  show-env:
+    cmds:
+      - poetry env list
+      - poetry env info
+
+  update-venv:
+    cmds:
+      # update project dependencies
+      - poetry update
+      # install project into virtual environment
+      - poetry install
+
+  validate-pyproject:
+    cmds:
+      # validate the pyproject.toml file
+      - poetry check
+      - poetry run -- validate-pyproject pyproject.toml
+
+  check-pyproject:
+    cmds:
+      # check that project and tool.poetry tables are in sync
+      - poetry run -- python3 -m check_pyproject --loglevel INFO
+
   init:
     desc: Initialize the project for using poetry
     cmds:
       - task: switch-to-poetry
-      - poetry env list
-      - poetry env info
+      - task: show-env
 
   lint:
     desc: Perform static code analysis
@@ -21,24 +42,33 @@ tasks:
       - poetry run -- mypy --strict --python-version 3.12 src/ tests/
       - poetry run -- fawltydeps --detailed || true
       - poetry run -- reuse lint
+      - poetry run -- pyupgrade --py311-plus
+      # Disallow improper capitalization
+      - scripts/fail_on_regex_match.sh "PyBind|Numpy|Cmake|CCache|Github|PyTest"
+      # lint shell scripts
+      - git ls-files -z -- "*.sh" | xargs -0 poetry run -- shellcheck
 
   format:
     desc: Check and reformat the code to a coding standard
     cmds:
-      - poetry run ruff format --config pyproject.toml src tests
+      - poetry run -- ruff format --config pyproject.toml src tests
+      - git ls-files -z -- '*.md' '*.py' | xargs -0 --verbose poetry run --
+        blacken-docs
 
   check:
     desc: Run the raw project script on the project's pyproject.toml file.
     cmds:
-      # update project dependencies
-      - poetry update
-      - poetry run python3 -m check_pyproject --loglevel DEBUG
+      - task: update-venv
+      - poetry run -- python3 -m check_pyproject --loglevel DEBUG
 
-  check_licenses:
+  check-licenses:
     desc: Check that all dependency licenses are acceptable for this project
     cmds:
       # check licenses
       - poetry run -- liccheck -s pyproject.toml
+      # add any missing copyrights
+      - git diff --name-only --cached | xargs -I {} poetry run -- reuse annotate
+        -c "$(git config --get user.name) <$(git config --get user.email)>" "{}"
       # create software bill of materials
       - poetry run -- reuse spdx -o reuse.spdx
 
@@ -50,39 +80,32 @@ tasks:
 
   pre-commit-1:
     cmds:
-      # validate the pyproject.toml file
-      - poetry check
-      # update project dependencies
-      - poetry update
-      # install project into virtual environment
-      - poetry install
-      # check that project and tool.poetry tables are in sync
-      - poetry run python3 -m check_pyproject --loglevel INFO
-      # show project's environment
-      - poetry env list
-      - poetry env info
+      - task: validate-pyproject
+      - task: update-venv
+      - task: check-pyproject
       # format the source code
       - task: format
       # check for programming errors/warnings
       - task: lint
-      # create dist packages
-      - poetry build
 
   pre-commit-2:
     cmds:
-      # check that all dependency licenses are acceptable
-      - task: check_licenses
+      # generate code metrics
+      - task: check-licenses
       # run unit tests
       - task: tests
 
   build:
     desc: Perform normal build workflow
     cmds:
+      # show project's environment
+      - task: show-env
       - task: pre-commit-1
-      # update development virtual environment
-      - poetry run pip install --upgrade pip
-      - poetry install
+      # create dist packages
+      - poetry build
+      - task: update-venv
       - task: pre-commit-2
+      # generate unit test coverage reports
       - task: coverage
       # generate code metrics
       - task: metrics
@@ -100,26 +123,27 @@ tasks:
     desc: Analyze the code
     cmds:
       - bash -c "mkdir -p metrics"
-      - poetry run radon cc --show-complexity --json --min=A
+      - poetry run -- radon cc --show-complexity --json --min=A
         --output-file=metrics/code-complexity.json src/
-      - poetry run radon cc --show-complexity --min=A src/ -- | tail -n +1 |
+      - poetry run -- radon cc --show-complexity --min=A src/ -- | tail -n +1 |
         head -10
-      - poetry run radon hal --json --output-file=metrics/halstead-metrics.json
-        src/
-      - poetry run radon mi --json
+      - poetry run -- radon hal --json
+        --output-file=metrics/halstead-metrics.json src/
+      - poetry run -- radon mi --json
         --output-file=metrics/maintainability-index.json src/
-      - poetry run radon raw --json --output-file=metrics/raw-metrics.json src/
+      - poetry run -- radon raw --json --output-file=metrics/raw-metrics.json
+        src/
 
   tests:
     desc: Run the unit tests for the supported versions
     cmds:
-      - poetry run tox
+      - poetry run -- pytest tests
+      - poetry run -- tox
 
   coverage:
     desc:
-      Run the unit tests with coverage - poetry run pytest --cov-report
-      term-missing --cov-report json:metrics/coverage.json --cov=check_pyproject
-      tests
+      Run the unit tests with coverage - poetry run -- pytest --cov-report
+      term-missing --cov-report json:metrics/coverage.json --cov=clibones tests
 
   docs:
     desc: Create the project documentation and open in the browser
@@ -141,8 +165,6 @@ tasks:
     desc: Remove virtual environments and generated files
     cmds:
       - poetry env remove --all
-      - poetry env list
-      - poetry env info
       - rm -rf .tox
       - rm -rf dist
       - rm -rf metrics
@@ -153,18 +175,20 @@ tasks:
   switch-to-hatch:
     desc: Switch development to use hatch instead of poetry
     cmds:
-      - poetry run python3 scripts/swap_build_system.py hatch
+      - poetry run -- python3 scripts/swap_build_system.py hatch
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-hatch.yml Taskfile.yml
+      - task: show-env
 
   switch-to-poetry:
     desc: Switch development to use poetry instead of hatch
     cmds:
-      - poetry run python3 scripts/swap_build_system.py poetry
+      - poetry run -- python3 scripts/swap_build_system.py poetry
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-poetry.yml Taskfile.yml
       - poetry lock
       - poetry install
+      - task: show-env
 
   main:
     desc: Run the __main__ module code, passes arguments to the module

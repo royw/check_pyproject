@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2024 Roy Wright
 # SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT

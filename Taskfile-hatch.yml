@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2024 Roy Wright
 # SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
 #
 # SPDX-License-Identifier: MIT
@@ -152,12 +151,12 @@ tasks:
   build-docs:
     desc: Build the documentation
     cmds:
-      - hatch run docs:build
+      - hatch run docs:mkdocs build
 
   serve-docs:
     desc: Start the documentation server and open browser at localhost:8000
     cmds:
-      - hatch run docs:serve --open
+      - hatch run docs:mkdocs serve --open
 
   clean:
     desc: Remove virtual environments and generated files
