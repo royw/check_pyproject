@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
+# SPDX-FileCopyrightText: 2024 Roy Wright
 #
 # SPDX-License-Identifier: MIT
 
@@ -64,8 +64,7 @@ tasks:
       - hatch -e dev run -- liccheck -s pyproject.toml
       # add any missing copyrights
       - git diff --name-only --cached | xargs -I {} hatch -e dev run -- reuse
-        annotate -c "$(git config --get user.name) <$(git config --get
-        user.email)>" "{}"
+        annotate -c "$(git config --get user.name)" "{}"
       # create software bill of materials
       - hatch -e dev run -- reuse spdx -o reuse.spdx
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
+# SPDX-FileCopyrightText: 2024 Roy Wright
 #
 # SPDX-License-Identifier: MIT
 
