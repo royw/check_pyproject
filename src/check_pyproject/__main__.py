@@ -56,9 +56,10 @@ class Settings(ApplicationSettings):
             app_name=Settings.__project_name,
             app_package=Settings.__project_package,
             app_description=Settings.__project_description,
-            config_sections=[Settings.__project_name],
+            config_sections=[Settings.__project_package],
             args=args,
         )
+        self.add_persist_keys({"pyproject_toml_files", "loglevel", "debug"})
 
     def add_parent_parsers(self) -> list[argparse.ArgumentParser]:
         """This is where you should add any parent parsers for the main parser.

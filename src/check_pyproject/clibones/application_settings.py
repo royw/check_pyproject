@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Roy Wright <roy@wright.org>
+# SPDX-FileCopyrightText: 2024 Roy Wright
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,13 +27,12 @@ This base class adds the following features to ArgumentParser:
 from __future__ import annotations
 
 import argparse
-import contextlib
 import sys
 from abc import ABC, abstractmethod
-from configparser import ConfigParser, NoSectionError
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from check_pyproject.clibones.config_file import ConfigFile
 from check_pyproject.clibones.info_control import InfoControl
 from check_pyproject.clibones.logger_control import LoggerControl
 
@@ -46,17 +45,12 @@ class ApplicationSettings(ABC):
     Usage::
 
         class MySettings(ApplicationSettings):
-            HELP = {
-                "foo": "the foo option",
-                "bar": "the bar option",
-            }
-
             def __init__(self):
                 super(MySettings, self).__init__("App Name", "app_package", "app_description", ["APP Section"])
 
             def add_arguments(parser):
-                parser.add_argument("--foo", action="store_true", help=HELP["foo"])
-                parser.add_argument("--bar", action="store_true", help=HELP["bar"])
+                parser.add_argument("--foo", action="store_true", help="It's all about foo")
+                parser.add_argument("--bar", action="store_true", help="Just the best, bar none")
 
     Context Manager Usage::
 
@@ -77,99 +71,29 @@ class ApplicationSettings(ABC):
         app_package: str,
         app_description: str,
         config_sections: list[str],
-        config_files: list[str] | None = None,
+        default_config_file: Path | None = None,
         args: Sequence[str] | None = None,
     ) -> None:
         """
         :param str app_name: The application name
         :param app_package: The application's package name
-        :param config_sections: The INI sections in the config file to import in as defaults to the argument parser.
-        :param config_files: A list of config files to load
+        :param default_config_file: The default config file to load, None means no default config file.
         :param args: A list of arguments to pass to the application.  If none then get arguments from sys.argv
         """
         self.__app_name: str = app_name
         self.__app_package: str = app_package
         self.__app_description = app_description
         self.__config_sections: list[str] = config_sections
-        self.__config_files: list[str] = config_files or []
+        self.__default_config_file: Path | None = default_config_file
         self.__args: Sequence[str] = args or sys.argv[1:]
+
         self._parser: argparse.ArgumentParser | None = None
         self._settings: argparse.Namespace | None = None
         self._remaining_argv: list[str] = []
+        self._persist_keys: set[str] = set()
         self.quick_exit: bool = False
         self.logger_control = LoggerControl()
         self.info_control = InfoControl(app_package=app_package)
-
-    def _parse_config_files(
-        self, args: Sequence[str] | None = None
-    ) -> tuple[
-        argparse.ArgumentParser,
-        list[str],
-        dict[str, Any],
-        list[str],
-    ]:
-        config_parser_help = f"Configuration file in INI format (default: {self._default_config_files()})"
-        conf_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
-        conf_parser.add_argument("--config", metavar="FILE", help=config_parser_help)
-
-        parse_args, remaining_argv = conf_parser.parse_known_args(args=args)
-
-        config_files = self.__config_files or self._default_config_files()[:]
-        if parse_args.config:
-            config_files.insert(0, parse_args.config)
-
-        config = ConfigParser()
-        config.read(config_files)
-        defaults = {}
-        for section in self.__config_sections:
-            with contextlib.suppress(NoSectionError):
-                defaults.update(dict(config.items(section)))
-
-        return conf_parser, config_files, defaults, remaining_argv
-
-    def parse(
-        self, args: Sequence[str] | None = None
-    ) -> tuple[argparse.ArgumentParser, argparse.Namespace, list[str]]:
-        """
-        Perform the parsing of the optional config files and the command line arguments.
-
-        return: the parser and the settings
-        """
-
-        # parse any config files
-        conf_parser, config_files, defaults, remaining_argv = self._parse_config_files(args=args)
-        parent_parsers: Sequence[argparse.ArgumentParser] = [conf_parser, *self.add_parent_parsers()]
-
-        parser = argparse.ArgumentParser(self.__app_name, parents=parent_parsers, description=self.__app_description)
-
-        if defaults:
-            parser.set_defaults(**defaults)
-
-        self.info_control.add_arguments(parser=parser)
-        self.logger_control.add_arguments(parser=parser)
-
-        self.add_arguments(parser, defaults)
-
-        settings, leftover_argv = parser.parse_known_args(args=remaining_argv)
-        # copy quick_exit into namespace for context usage
-        settings.quick_exit = self.quick_exit
-        settings.config_files = config_files
-
-        return parser, settings, leftover_argv
-
-    def _default_config_files(self) -> list[str]:
-        """
-        Defines the default set of config files to try to use.  The set is:
-        * ".appnamerc" in the current directory
-        * "~/.appname/{appname}.conf"
-
-        You may override this method if you want to use a different set of config files.
-
-        :return: the set of config file locations
-        """
-        rc_name: str = f".{self.__app_package}rc"
-        conf_name: str = Path(f"~/.local/{self.__app_package}.conf").expanduser().name
-        return [rc_name, conf_name]
 
     @abstractmethod
     def add_parent_parsers(self) -> list[argparse.ArgumentParser]:  # pragma: no cover
@@ -203,8 +127,60 @@ class ApplicationSettings(ABC):
         :param remaining_argv: the remaining argv after the parsing is completed.
         :return: a list of error messages or an empty list
         """
-
         return []
+
+    def add_persist_keys(self, keys: set[str]) -> None:
+        self._persist_keys |= keys
+
+    def parse(self, args: Sequence[str]) -> tuple[argparse.ArgumentParser, argparse.Namespace, list[str]]:
+        """
+        Perform the parsing of the optional config files and the command line arguments.
+
+        return: the parser, the settings, and any remaining arguments.
+        """
+        config_parser_help = f"Configuration file (default: {self.__default_config_file})"
+        dash_config_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+        dash_config_parser.add_argument("--config", metavar="FILE", help=config_parser_help)
+        parse_args, remaining_args = dash_config_parser.parse_known_args(args=args)
+
+        # desired config files may also be located in self.__config_files and in self._default_config_files(),
+        # so combine the three possible sources with the "--config FILE" being first in the list.
+        config_filename = self.__default_config_file
+        if parse_args.config:
+            config_filename = parse_args.config
+
+        defaults = {}
+        if config_filename is not None:
+            config_file = ConfigFile()
+            data = config_file.load(Path(config_filename))
+            if self.__app_package in data:
+                app_data = data[self.__app_package]
+                for key in app_data:
+                    if key in self._persist_keys:
+                        defaults[key] = app_data[key]
+
+        parser = argparse.ArgumentParser(
+            self.__app_name,
+            parents=[dash_config_parser, *self.add_parent_parsers()],
+            description=self.__app_description,
+        )
+
+        # add arguments to the parser
+        self.info_control.add_arguments(parser=parser)
+        self.logger_control.add_arguments(parser=parser)
+        self.add_arguments(parser=parser, defaults=defaults)
+
+        if defaults:
+            parser.set_defaults(**defaults)
+
+        # drum roll... Perform the parse!
+        settings, leftover_args = parser.parse_known_args(args=remaining_args)
+
+        # copy quick_exit into namespace for context usage
+        settings.quick_exit = self.quick_exit
+        settings.config_file = config_filename
+
+        return parser, settings, leftover_args
 
     def __enter__(self) -> argparse.Namespace:
         """context manager enter
@@ -221,6 +197,7 @@ class ApplicationSettings(ABC):
             error_messages: list[str] = ApplicationSettings.validate_arguments(
                 self, self._settings, self._remaining_argv
             ) + self.validate_arguments(self._settings, self._remaining_argv)
+
             for error_msg in error_messages:
                 self._parser.error(error_msg)
 
