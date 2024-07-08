@@ -3,5 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 [check_pyproject]
-#loglevel="INFO"
 debug=false

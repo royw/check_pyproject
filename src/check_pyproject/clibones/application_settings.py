@@ -138,26 +138,11 @@ class ApplicationSettings(ABC):
 
         return: the parser, the settings, and any remaining arguments.
         """
-        config_parser_help = f"Configuration file (default: {self.__default_config_file})"
-        dash_config_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
-        dash_config_parser.add_argument("--config", metavar="FILE", help=config_parser_help)
-        parse_args, remaining_args = dash_config_parser.parse_known_args(args=args)
-
-        # desired config files may also be located in self.__config_files and in self._default_config_files(),
-        # so combine the three possible sources with the "--config FILE" being first in the list.
-        config_filename = self.__default_config_file
-        if parse_args.config:
-            config_filename = parse_args.config
-
-        defaults = {}
-        if config_filename is not None:
-            config_file = ConfigFile()
-            data = config_file.load(Path(config_filename))
-            if self.__app_package in data:
-                app_data = data[self.__app_package]
-                for key in app_data:
-                    if key in self._persist_keys:
-                        defaults[key] = app_data[key]
+        config_file = ConfigFile()
+        config_file.default_config_file = self.__default_config_file
+        config_file.section_name = self.__app_package
+        config_file.persist_keys = self._persist_keys
+        dash_config_parser, remaining_args, defaults = config_file.parser(args=args)
 
         parser = argparse.ArgumentParser(
             self.__app_name,
@@ -168,7 +153,7 @@ class ApplicationSettings(ABC):
         # add arguments to the parser
         self.info_control.add_arguments(parser=parser)
         self.logger_control.add_arguments(parser=parser)
-        self.add_arguments(parser=parser, defaults=defaults)
+        self.add_arguments(parser=parser, defaults=defaults or {})
 
         if defaults:
             parser.set_defaults(**defaults)
@@ -178,7 +163,9 @@ class ApplicationSettings(ABC):
 
         # copy quick_exit into namespace for context usage
         settings.quick_exit = self.quick_exit
-        settings.config_file = config_filename
+        settings.config_file = config_file.config_filepath
+
+        config_file.save_config_file(vars(settings))
 
         return parser, settings, leftover_args
 
