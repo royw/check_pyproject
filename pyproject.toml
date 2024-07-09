@@ -213,6 +213,9 @@ uuid = "1.30"
 
 ### Hatch build system
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 # environment scripts allow you to assign a command to an alias
 # for example:
 # test = "pytest {args}"
@@ -222,18 +225,24 @@ uuid = "1.30"
 # `hatch run pytest`
 
 [tool.hatch.envs.default]
-features = ["test"]
+features = ["test", "metrics", "docs", "dev"]
+type = "virtual"
+path = ".venv"
 
 [tool.hatch.envs.default.scripts]
 
 [tool.hatch.envs.dev]
 features = ["dev"]
+type = "virtual"
+path = ".venv"
 
 [tool.hatch.envs.dev.scripts]
 test = "pytest {args}"
 
 [tool.hatch.envs.test]
 features = ["test"]
+type = "virtual"
+path = ".venv"
 
 [tool.hatch.envs.test.scripts]
 test = "pytest {args}"
@@ -246,6 +255,8 @@ features = ["docs"]
 dependencies = [
   "mkdocs"
 ]
+type = "virtual"
+path = ".venv"
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
@@ -253,12 +264,13 @@ serve = "mkdocs serve --dev-addr localhost:8000"
 
 [tool.hatch.envs.sphinx]
 features = ["sphinx"]
+type = "virtual"
+path = ".venv"
 
 [tool.hatch.envs.metrics]
 features = ["metrics"]
-
-[tool.hatch.metadata]
-allow-direct-references = true
+type = "virtual"
+path = ".venv"
 
 ### pytest
 
