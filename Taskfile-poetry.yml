@@ -68,7 +68,7 @@ tasks:
       - poetry run -- liccheck -s pyproject.toml
       # add any missing copyrights
       - git diff --name-only --cached | xargs -I {} poetry run -- reuse annotate
-        -c "$(git config --get user.name) <$(git config --get user.email)>" "{}"
+        -c "$(git config --get user.name)" "{}"
       # create software bill of materials
       - poetry run -- reuse spdx -o reuse.spdx
 
