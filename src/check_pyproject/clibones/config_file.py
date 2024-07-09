@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import tomlkit.parser
+from loguru import logger
 
 from check_pyproject.clibones.config_file_base import ConfigFileBase
 
@@ -130,10 +131,12 @@ class ConfigFile:
 
         defaults: dict[str, Any] = {}
         if self.config_filepath is not None:
-            data = self.load(self.config_filepath)
-            if self.section_name in data:
-                defaults = self.filter_keys(data[self.section_name], self.persist_keys or set(), defaults)
-
+            try:
+                data = self.load(self.config_filepath)
+                if self.section_name in data:
+                    defaults = self.filter_keys(data[self.section_name], self.persist_keys or set(), defaults)
+            except FileNotFoundError:
+                logger.debug(f"Config file ({self.config_filepath}) not found")
         return dash_config_parser, remaining_args, defaults
 
     @staticmethod

@@ -95,6 +95,9 @@ class ApplicationSettings(ABC):
         self.logger_control = LoggerControl()
         self.info_control = InfoControl(app_package=app_package)
 
+        if self.__default_config_file is None:
+            self.__default_config_file = Path.home() / ".local" / f"{self.__app_package}.toml"
+
     @abstractmethod
     def add_parent_parsers(self) -> list[argparse.ArgumentParser]:  # pragma: no cover
         """
