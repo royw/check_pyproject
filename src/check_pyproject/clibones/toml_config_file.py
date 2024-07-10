@@ -22,7 +22,8 @@ class TomlConfigFile(ConfigFileBase):
     @staticmethod
     def load(filepath: Path) -> dict[str, Any]:
         with filepath.open(encoding="utf-8") as f:
-            return tomlkit.load(f)
+            data: dict[str, Any] = tomlkit.load(f).value
+            return data
 
     @staticmethod
     def save(filepath: Path, config_dict: dict[str, Any]) -> None:

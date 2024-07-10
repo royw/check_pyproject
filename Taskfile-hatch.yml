@@ -76,18 +76,11 @@ tasks:
 
   pre-commit-1:
     cmds:
-      - task: validate-pyproject
       - task: update-venv
       - task: check-pyproject
-      # format the source code
-      - task: format
-      # check for programming errors/warnings
-      - task: lint
 
   pre-commit-2:
     cmds:
-      # generate code metrics
-      - task: check-licenses
       # run unit tests
       - task: tests
 
@@ -97,10 +90,17 @@ tasks:
       # show project's environment
       - task: show-env
       - task: pre-commit-1
+      # format the source code
+      - task: format
+      # check for programming errors/warnings
+      - task: lint
       # create dist packages
       - hatch -e dev build
       - task: update-venv
       - task: pre-commit-2
+      - pre-commit run --all-files
+      # check licenses
+      - task: check-licenses
       # generate unit test coverage reports
       - task: coverage
       # generate code metrics

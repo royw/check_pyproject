@@ -114,7 +114,7 @@ def test_save_config_file_as() -> None:
 
     assert test_save_config_filepath.exists()
     with test_save_config_filepath.open() as fp:
-        data = tomlkit.load(fp).value
+        data: dict[str, Any] = tomlkit.load(fp).value
         assert "loglevel" in data["check_pyproject"]
         assert data["check_pyproject"]["loglevel"] == "DEBUG"
 

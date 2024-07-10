@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import tomlkit.parser
-from loguru import logger
 
 from check_pyproject.clibones.config_file_base import ConfigFileBase
 
@@ -25,8 +24,6 @@ from check_pyproject.clibones.json_config_file import JsonConfigFile
 from check_pyproject.clibones.toml_config_file import TomlConfigFile
 
 SUPPORTED_FORMATS: list[type[ConfigFileBase]] = [TomlConfigFile, JsonConfigFile]
-
-
 # ================================================================================
 
 
@@ -136,7 +133,8 @@ class ConfigFile:
                 if self.section_name in data:
                     defaults = self.filter_keys(data[self.section_name], self.persist_keys or set(), defaults)
             except FileNotFoundError:
-                logger.debug(f"Config file ({self.config_filepath}) not found")
+                # the config file doesn't exist, which is ok and means no defaults...
+                pass
         return dash_config_parser, remaining_args, defaults
 
     @staticmethod

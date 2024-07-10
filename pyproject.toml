@@ -211,10 +211,23 @@ optional_dependencies = []
 [tool.liccheck.authorized_packages]
 uuid = "1.30"
 
-### Hatch build system
+### Hatch build system https://hatch.pypa.io/1.9/config/metadata/
 
 [tool.hatch.metadata]
+# By default, dependencies are not allowed to define direct references.
+# To disable this check, set allow-direct-references to true
 allow-direct-references = true
+
+#[tool.hatch.build]
+# build output directory, defaults to "dist"
+#directory = "dist"
+
+#[too.hatch.envs]
+# Set the type ("virtual") and path (".venv") for each environment to facilitate
+# using an IDE such as PyCharm.
+# Here we direct hatch to create and use its virtual environment in .venv/ which
+# allows setting the project to use the same virtual environment as hatch.
+# In PyCharm, set "python interpreter, local, virtual environment, existing" to .venv/
 
 # environment scripts allow you to assign a command to an alias
 # for example:
@@ -228,49 +241,54 @@ allow-direct-references = true
 features = ["test", "metrics", "docs", "dev"]
 type = "virtual"
 path = ".venv"
-
-[tool.hatch.envs.default.scripts]
+scripts.test = "pytest {args}"
 
 [tool.hatch.envs.dev]
 features = ["dev"]
 type = "virtual"
 path = ".venv"
-
-[tool.hatch.envs.dev.scripts]
-test = "pytest {args}"
+scripts.test = "pytest {args}"
 
 [tool.hatch.envs.test]
 features = ["test"]
+detached = true
 type = "virtual"
 path = ".venv"
-
-[tool.hatch.envs.test.scripts]
-test = "pytest {args}"
+dependencies = [
+  "coverage[toml]",
+  "pytest",
+  "pytest-cov",
+]
+scripts.test = "pytest {args}"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["3.11", "3.12"]
 
 [tool.hatch.envs.docs]
 features = ["docs"]
+detached = true
+type = "virtual"
+path = ".venv"
 dependencies = [
   "mkdocs"
 ]
-type = "virtual"
-path = ".venv"
-
-[tool.hatch.envs.docs.scripts]
-build = "mkdocs build --clean --strict"
-serve = "mkdocs serve --dev-addr localhost:8000"
+scripts.build = "mkdocs build --clean --strict"
+scripts.serve = "mkdocs serve --dev-addr localhost:8000"
 
 [tool.hatch.envs.sphinx]
 features = ["sphinx"]
+detached = true
 type = "virtual"
 path = ".venv"
 
 [tool.hatch.envs.metrics]
 features = ["metrics"]
+detached = true
 type = "virtual"
 path = ".venv"
+dependencies = [
+  "radon"
+]
 
 ### pytest
 
@@ -433,7 +451,7 @@ ignore_unused = ["radon", "pytest-cov", "pytest", "tox", "fawltydeps", "mkdocs",
   "mkdocs-literate-nav", "mkdocs-section-index", "ruff", "mkdocs-material", "mkdocs-gen-files",
   "flict", "furo", "liccheck", "mypy", "myst-parser", "pre-commit", "reuse", "sphinx",
   "sphinx-autodoc-typehints", "sphinx-copybutton", "sphinx_copybutton", "tomlkit", "validate-pyproject",
-  "blacken-docs", "pyupgrade",
+  "blacken-docs", "pyupgrade", "shellcheck-py",
 ]
 output_format = "human_detailed"  # Detailed report by default
 
