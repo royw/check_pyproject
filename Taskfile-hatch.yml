@@ -162,10 +162,12 @@ tasks:
     cmds:
       - hatch env prune
       - rm -rf .tox
+      - rm -rf .nox
       - rm -rf dist
       - rm -rf metrics
       - rm -rf site
       - rm -rf tests/__pycache__
+      - rm -rf .*_cache
 
   switch-to-hatch:
     desc: Switch development to use hatch instead of poetry

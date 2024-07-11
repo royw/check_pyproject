@@ -10,12 +10,15 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any
 
+import pytest
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
 from check_pyproject.check_pyproject_toml import (
+    add_leftover_markers_to_url,
     check_fields,
+    format_diff_values,
     string_field,
     to_poetry_requirements,
     validate_pyproject_toml_file,
@@ -238,3 +241,41 @@ def test_bzr_vcs() -> None:
     requirements = to_poetry_requirements(dependencies)
     diff = requirements.symmetric_difference(target_requirements)
     assert len(diff) == 0, f"bzr Diff: {pformat(diff)}"
+
+
+def test_format_diff_values_set() -> None:
+    project_data = {Requirement(f"1.2.{n}") for n in range(10)}
+    poetry_data = {Requirement(f"1.2.{2 * n}") for n in range(10)}
+    out_str = format_diff_values(project_data=project_data, poetry_data=poetry_data)
+    assert out_str == (
+        'project: ["1.2.1", "1.2.3", "1.2.5", "1.2.7", "1.2.9"]\n'
+        "vs\n"
+        'poetry: ["1.2.10", "1.2.12", "1.2.14", "1.2.16", "1.2.18"]'
+    )
+
+
+def test_format_diff_values_list() -> None:
+    project_data = [f"1.2.{n}" for n in range(10)]
+    poetry_data = [f"1.2.{2 * n}" for n in range(10)]
+    out_str = format_diff_values(project_data=project_data, poetry_data=poetry_data)
+    assert out_str == (
+        'project: ["1.2.1", "1.2.3", "1.2.5", "1.2.7", "1.2.9"]\n'
+        "vs\n"
+        'poetry: ["1.2.10", "1.2.12", "1.2.14", "1.2.16", "1.2.18"]'
+    )
+
+
+def test_format_diff_values_tuple() -> None:
+    """tuple is not supported, so this is testing error handling."""
+    project_data = tuple([f"1.2.{n}" for n in range(10)])
+    poetry_data = tuple([f"1.2.{2 * n}" for n in range(10)])
+    with pytest.raises(TypeError):
+        # noinspection PyTypeChecker
+        format_diff_values(project_data=project_data, poetry_data=poetry_data)  # type: ignore[arg-type]
+
+
+def test_add_leftover_markers_to_url() -> None:
+    data = add_leftover_markers_to_url(
+        url="https://example.com", package_value={"foo": "1", "bar": "2"}, separator=";"
+    )
+    assert data in ["https://example.com;foo=1;bar=2", "https://example.com;bar=2;foo=1"]

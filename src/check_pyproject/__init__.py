@@ -19,3 +19,24 @@ then you need to manually maintain sync between [project] and [tool.poetry] tabl
 
 This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly in-sync.
 """
+
+from __future__ import annotations
+
+from importlib import metadata
+from pathlib import Path
+
+import tomlkit
+
+try:
+    # this assumes running in an installed package
+    __version__ = metadata.version(__package__)
+except metadata.PackageNotFoundError:
+    # this should only ever happen in the development environment,
+    # so ok to assume location of pyproject.toml file.
+    # Also assume src/package file layout and this file is in src/package
+    # and pyproject is in the parent directory of src
+    # ../../pyproject.toml
+    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+    with pyproject_path.open() as fp:
+        data = tomlkit.loads(fp.read()).value
+        __version__ = data["tool"]["poetry"]["version"] + "dev"
