@@ -23,17 +23,6 @@ tasks:
       - poetry check
       - poetry run -- validate-pyproject pyproject.toml
 
-  check-pyproject:
-    cmds:
-      # check that project and tool.poetry tables are in sync
-      - poetry run -- python3 -m check_pyproject --loglevel INFO
-
-  init:
-    desc: Initialize the project for using poetry
-    cmds:
-      - task: switch-to-poetry
-      - task: show-env
-
   lint:
     desc: Perform static code analysis
     cmds:
@@ -55,11 +44,10 @@ tasks:
       - git ls-files -z -- '*.md' '*.py' | xargs -0 --verbose poetry run --
         blacken-docs
 
-  check:
-    desc: Run the raw project script on the project's pyproject.toml file.
+  check-pyproject:
     cmds:
-      - task: update-venv
-      - poetry run -- python3 -m check_pyproject --loglevel DEBUG
+      # check that project and tool.poetry tables are in sync
+      - poetry run -- python3 -m check_pyproject --loglevel INFO
 
   check-licenses:
     desc: Check that all dependency licenses are acceptable for this project
@@ -187,6 +175,7 @@ tasks:
       - poetry run -- python3 scripts/swap_build_system.py poetry
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-poetry.yml Taskfile.yml
+      - poetry config virtualenvs.in-project true
       - poetry lock
       - poetry install
       - task: show-env

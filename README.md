@@ -12,19 +12,22 @@ SPDX-License-Identifier: MIT
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Workflows](#workflows)
-  - [Tasks](#tasks)
-  - [Switching between Poetry and Hatch](#switching-between-poetry-and-hatch)
-  - [Adding a dependency using poetry](#adding-a-dependency-using-poetry)
-  - [Adding a dependency using hatch](#adding-a-dependency-using-hatch)
-- [License](#license)
-- [References](#references)
-  - [Build tools](#build-tools)
-    - [FawltyDeps](#fawltydeps)
-  - [Documentation tools](#documentation-tools)
+<!-- TOC -->
+
+- [Check PyProject](#check-pyproject)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Workflows](#workflows)
+    - [Tasks](#tasks)
+    - [Switching between Poetry and Hatch](#switching-between-poetry-and-hatch)
+    - [Adding a dependency using poetry](#adding-a-dependency-using-poetry)
+    - [Adding a dependency using hatch](#adding-a-dependency-using-hatch)
+  - [License](#license)
+  - [References](#references) _ [Build tools](#build-tools) _
+  [FawltyDeps](#fawltydeps) \* [Documentation tools](#documentation-tools)
+  <!-- TOC -->
 
 ## Overview
 
@@ -163,6 +166,7 @@ Will show any version specifier mismatches...
   Python project.
 - [Reuse](https://reuse.readthedocs.io/) is a tool for compliance with the
   [REUSE](https://reuse.software/) recommendations.
+- [MyPy](https://www.mypy-lang.org/)
 
 #### FawltyDeps
 

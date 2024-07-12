@@ -5,34 +5,28 @@
 version: "3"
 
 tasks:
+  default:
+    cmds:
+      - task --list
+
   show-env:
+    # [private] show the environment
     cmds:
       - hatch env show
 
   update-venv:
     cmds:
-      # update development virtual environment
+      # [private] update development virtual environment
       - hatch -e dev run pip install --upgrade pip
       - hatch -e dev run pip install --no-deps -e .
 
   validate-pyproject:
     cmds:
-      # validate the pyproject.toml file
+      # [private] validate the pyproject.toml file
       - hatch run -- dev:validate-pyproject pyproject.toml
 
-  check-pyproject:
-    cmds:
-      # check that project and tool.poetry tables are in sync
-      - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
-
-  init:
-    desc: Initialize the project for using hatch
-    cmds:
-      - task: switch-to-hatch
-      - task: show-env
-
   lint:
-    desc: Perform static code analysis
+    desc: Perform static code analysis.
     cmds:
       - hatch run -- dev:ruff check --config pyproject.toml --fix src tests
       - hatch -e dev run -- mypy --strict --python-version 3.11 src/ tests/
@@ -46,19 +40,21 @@ tasks:
       - git ls-files -z -- "*.sh" | xargs -0 hatch -e dev run -- shellcheck
 
   format:
-    desc: Check and reformat the code to a coding standard
+    desc: Check and reformat the code to a coding standard.
     cmds:
       - hatch run -- dev:ruff format --config pyproject.toml src tests
       - git ls-files -z -- '*.md' '*.py' | xargs -0 --verbose hatch -e dev run
         -- blacken-docs
 
-  check:
-    desc: Run the raw project script on the project's pyproject.toml file.
+  check-pyproject:
+    desc:
+      Check the consistency between poetry and hatch in the pyproject.toml file.
     cmds:
-      - hatch -e dev run -- python3 -m check_pyproject --loglevel DEBUG
+      # check that project and tool.poetry tables are in sync
+      - hatch -e dev run -- python3 -m check_pyproject --loglevel INFO
 
   check-licenses:
-    desc: Check that all dependency licenses are acceptable for this project
+    desc: Check that all dependency licenses are acceptable for this project.
     cmds:
       # check licenses
       - hatch -e dev run -- liccheck -s pyproject.toml
@@ -69,36 +65,34 @@ tasks:
       - hatch -e dev run -- reuse spdx -o reuse.spdx
 
   pre-commit:
-    desc: Must pass before allowing version control commit
+    desc: Must pass before allowing version control commit.
+    # called from the "pre-commit" hook and the "task build"
     cmds:
-      - task: pre-commit-1
-      - task: pre-commit-2
-
-  pre-commit-1:
-    cmds:
-      - task: update-venv
       - task: check-pyproject
-
-  pre-commit-2:
-    cmds:
       # run unit tests
       - task: tests
 
   build:
-    desc: Perform normal build workflow
+    desc: Build the project.
+    summary: |
+      Build the project
+
+      Format the project, check for code quality, check for compliance,
+      perform unit testing, build distributables, build documentation,
+      and run the application to display its version.
     cmds:
       # show project's environment
       - task: show-env
-      - task: pre-commit-1
       # format the source code
       - task: format
       # check for programming errors/warnings
       - task: lint
+      # check that code can be committed to vcs
+      - pre-commit run --all-files
       # create dist packages
       - hatch -e dev build
+      # install current build into dev virtual environment
       - task: update-venv
-      - task: pre-commit-2
-      - pre-commit run --all-files
       # check licenses
       - task: check-licenses
       # generate unit test coverage reports
@@ -111,12 +105,12 @@ tasks:
       - task: version
 
   version:
-    desc: run the project, having it return its version
+    desc: Run the project, having it return its version.
     cmds:
       - hatch -e dev run -- python3 -m check_pyproject --version
 
   metrics:
-    desc: Analyze the code
+    desc: Analyze the code.
     cmds:
       - bash -c "mkdir -p metrics"
       - hatch run -- metrics:radon cc --show-complexity --json --min=A
@@ -131,34 +125,34 @@ tasks:
         --output-file=metrics/raw-metrics.json src/
 
   tests:
-    desc: Run the unit tests for the supported matrix
+    desc: Run the unit tests for the supported versions of python.
     cmds:
       - hatch run -- test:test
 
   coverage:
-    desc: Run the unit tests with coverage
+    desc: Run the unit tests with coverage.
     cmds:
       - hatch run -- test:pytest --cov-report term-missing --cov-report
         json:metrics/coverage.json --cov=check_pyproject tests
 
   docs:
-    desc: Create the project documentation and open in the browser
+    desc: Create the project documentation and open in the browser.
     cmds:
       - task: build-docs
       - task: serve-docs
 
   build-docs:
-    desc: Build the documentation
+    desc: Build the documentation.
     cmds:
       - hatch run docs:mkdocs build
 
   serve-docs:
-    desc: Start the documentation server and open browser at localhost:8000
+    desc: Start the documentation server and open browser at localhost:8000.
     cmds:
       - hatch run docs:mkdocs serve --open
 
   clean:
-    desc: Remove virtual environments and generated files
+    desc: Remove virtual environments and generated files.
     cmds:
       - hatch env prune
       - rm -rf .tox
@@ -170,7 +164,7 @@ tasks:
       - rm -rf .*_cache
 
   switch-to-hatch:
-    desc: Switch development to use hatch instead of poetry
+    desc: Switch development to use hatch instead of poetry.
     cmds:
       - hatch -e dev run -- python3 scripts/swap_build_system.py hatch
       - task: clean
@@ -178,16 +172,19 @@ tasks:
       - task: show-env
 
   switch-to-poetry:
-    desc: Switch development to use poetry instead of hatch
+    desc: Switch development to use poetry instead of hatch.
     cmds:
       - hatch -e dev run -- python3 scripts/swap_build_system.py poetry
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-poetry.yml Taskfile.yml
+      - poetry config virtualenvs.in-project true
       - poetry lock
       - poetry install
       - task: show-env
 
   main:
-    desc: Run the __main__ module code, passes arguments to the module
+    desc:
+      "Run the __main__ module code, passing arguments to the module.  Example:
+      task main -- --version"
     cmds:
       - hatch -e dev run -- python3 -m check_pyproject {{.CLI_ARGS}}
