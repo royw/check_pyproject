@@ -63,6 +63,7 @@ plugins:
 
 nav:
   - About: "index.md"
+  - Development Environment: "DEV-README.md"
   # rest of the navigation...
   # defer to gen-files + literate-nav
   - Code Reference: reference/
