@@ -35,6 +35,7 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-yaml
+      - id: check-toml
       - id: debug-statements
       - id: end-of-file-fixer
       - id: mixed-line-ending
@@ -73,18 +74,6 @@ repos:
         additional_dependencies:
           - pytest
 
-  - repo: local
-    hooks:
-      - id: task_pre_commit
-        name: task_pre_commit
-        entry: task pre-commit
-        pass_filenames: false
-        language: python
-        # use your preferred Python version
-        language_version: python3.12
-        types: [python]
-        verbose: true
-
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.3.0"
     hooks:
@@ -115,3 +104,15 @@ repos:
       - id: check-dependabot
       - id: check-github-workflows
       - id: check-readthedocs
+
+  - repo: local
+    hooks:
+      - id: task_pre_commit
+        name: task_pre_commit
+        entry: task pre-commit
+        pass_filenames: false
+        language: python
+        # use your preferred Python version
+        language_version: python3.12
+        types: [python]
+        verbose: true
