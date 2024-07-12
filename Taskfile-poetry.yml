@@ -5,26 +5,31 @@
 version: "3"
 
 tasks:
+  default:
+    cmds:
+      - task --list
+
   show-env:
+    # [private] show the environment
     cmds:
       - poetry env list
       - poetry env info
 
   update-venv:
     cmds:
-      # update project dependencies
+      # [private] update development virtual environment
       - poetry update
       # install project into virtual environment
       - poetry install
 
   validate-pyproject:
     cmds:
-      # validate the pyproject.toml file
+      # [private] validate the pyproject.toml file
       - poetry check
       - poetry run -- validate-pyproject pyproject.toml
 
   lint:
-    desc: Perform static code analysis
+    desc: Perform static code analysis.
     cmds:
       - poetry run -- ruff check --config pyproject.toml --fix src tests
       - poetry run -- mypy --strict --python-version 3.11 src/ tests/
@@ -38,19 +43,21 @@ tasks:
       - git ls-files -z -- "*.sh" | xargs -0 poetry run -- shellcheck
 
   format:
-    desc: Check and reformat the code to a coding standard
+    desc: Check and reformat the code to a coding standard.
     cmds:
       - poetry run -- ruff format --config pyproject.toml src tests
       - git ls-files -z -- '*.md' '*.py' | xargs -0 --verbose poetry run --
         blacken-docs
 
   check-pyproject:
+    desc:
+      Check the consistency between poetry and hatch in the pyproject.toml file.
     cmds:
       # check that project and tool.poetry tables are in sync
       - poetry run -- python3 -m check_pyproject --loglevel INFO
 
   check-licenses:
-    desc: Check that all dependency licenses are acceptable for this project
+    desc: Check that all dependency licenses are acceptable for this project.
     cmds:
       # check licenses
       - poetry run -- liccheck -s pyproject.toml
@@ -61,38 +68,36 @@ tasks:
       - poetry run -- reuse spdx -o reuse.spdx
 
   pre-commit:
-    desc: Must pass before allowing version control commit
+    desc: Must pass before allowing version control commit.
+    # called from the "pre-commit" hook and the "task build"
     cmds:
-      - task: pre-commit-1
-      - task: pre-commit-2
-
-  pre-commit-1:
-    cmds:
-      - task: validate-pyproject
-      - task: update-venv
       - task: check-pyproject
-      # format the source code
-      - task: format
-      # check for programming errors/warnings
-      - task: lint
-
-  pre-commit-2:
-    cmds:
-      # generate code metrics
-      - task: check-licenses
       # run unit tests
       - task: tests
 
   build:
-    desc: Perform normal build workflow
+    desc: Build the project.
+    summary: |
+      Build the project
+
+      Format the project, check for code quality, check for compliance,
+      perform unit testing, build distributables, build documentation,
+      and run the application to display its version.
     cmds:
       # show project's environment
       - task: show-env
-      - task: pre-commit-1
+      # format the source code
+      - task: format
+      # check for programming errors/warnings
+      - task: lint
+      # check that code can be committed to vcs
+      - pre-commit run --all-files
       # create dist packages
       - poetry build
+      # install current build into dev virtual environment
       - task: update-venv
-      - task: pre-commit-2
+      # generate code metrics
+      - task: check-licenses
       # generate unit test coverage reports
       - task: coverage
       # generate code metrics
@@ -103,12 +108,12 @@ tasks:
       - task: version
 
   version:
-    desc: run the project, having it return its version
+    desc: Run the project, having it return its version.
     cmds:
       - poetry run python3 -m check_pyproject -- --version
 
   metrics:
-    desc: Analyze the code
+    desc: Analyze the code.
     cmds:
       - bash -c "mkdir -p metrics"
       - poetry run -- radon cc --show-complexity --json --min=A
@@ -123,46 +128,48 @@ tasks:
         src/
 
   tests:
-    desc: Run the unit tests for the supported versions
+    desc: Run the unit tests for the supported versions of python.
     cmds:
       - poetry run -- pytest tests
       - poetry run -- tox
 
   coverage:
-    desc: Run the unit tests with coverage
+    desc: Run the unit tests with coverage.
     cmds:
       - poetry run -- pytest --cov-report term-missing --cov-report
         json:metrics/coverage.json --cov=clibones tests
 
   docs:
-    desc: Create the project documentation and open in the browser
+    desc: Create the project documentation and open in the browser.
     cmds:
       - task: build-docs
       - task: serve-docs
 
   build-docs:
-    desc: Build the documentation
+    desc: Build the documentation.
     cmds:
       - poetry run mkdocs build
 
   serve-docs:
-    desc: Start the documentation server and open browser at localhost:8000
+    desc: Start the documentation server and open browser at localhost:8000.
     cmds:
       - poetry run mkdocs serve --open
 
   clean:
-    desc: Remove virtual environments and generated files
+    desc: Remove virtual environments and generated files.
     cmds:
       - poetry env remove --all
       - rm -rf .tox
+      - rm -rf .nox
       - rm -rf dist
       - rm -rf metrics
       - rm -rf site
       - rm -rf tests/__pycache__
+      - rm -rf .*_cache
       - rm -rf poetry.lock
 
   switch-to-hatch:
-    desc: Switch development to use hatch instead of poetry
+    desc: Switch development to use hatch instead of poetry.
     cmds:
       - poetry run -- python3 scripts/swap_build_system.py hatch
       - task: clean
@@ -170,7 +177,7 @@ tasks:
       - task: show-env
 
   switch-to-poetry:
-    desc: Switch development to use poetry instead of hatch
+    desc: Switch development to use poetry instead of hatch.
     cmds:
       - poetry run -- python3 scripts/swap_build_system.py poetry
       - task: clean
@@ -181,6 +188,8 @@ tasks:
       - task: show-env
 
   main:
-    desc: Run the __main__ module code, passes arguments to the module
+    desc:
+      "Run the __main__ module code, passing arguments to the module.  Example:
+      task main -- --version"
     cmds:
       - poetry run python3 -m check_pyproject {{.CLI_ARGS}}
