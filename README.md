@@ -121,9 +121,9 @@ Add the dependency using the poetry CLI.
     poetry add --group dev some_tool
     task build
 
-The build ought to fail as the [project] and [tool.poetry] dependencies are now
-out of sync. But the output includes the PEP 508 dependency just added that you
-can copy and paste into the [project] table's appropriate dependency.
+The build ought to fail as [project] and [tool.poetry] dependencies are now out
+of sync. But the output includes the PEP 508 dependency just added that you can
+copy and paste into the [project] table's appropriate dependency.
 
     task build
 
@@ -131,8 +131,8 @@ Should pass this time.
 
 ### Adding a dependency using hatch
 
-Manually edit the `pyproject.toml` file and add the dependency to both the
-[project] and [tool.poetry] dependency tables. Then running
+Manually edit the `pyproject.toml` file and add the dependency to both [project]
+and [tool.poetry] dependency tables. Then running
 
     task build
 
