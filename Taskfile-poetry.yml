@@ -72,8 +72,6 @@ tasks:
     # called from the "pre-commit" hook and the "task build"
     cmds:
       - task: check-pyproject
-      # run unit tests
-      - task: tests
 
   build:
     desc: Build the project.
@@ -98,7 +96,7 @@ tasks:
       - task: update-venv
       # generate code metrics
       - task: check-licenses
-      # generate unit test coverage reports
+      # run unit test and generate coverage reports
       - task: coverage
       # generate code metrics
       - task: metrics

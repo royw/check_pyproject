@@ -65,14 +65,16 @@ repos:
         args: ["--fix", "--show-fixes"]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.10.0"
+  - repo: local
     hooks:
-      - id: mypy
-        files: src|tests
-        args: [--strict, --ignore-missing-imports]
-        additional_dependencies:
-          - pytest
+      - id: run-mypy-all-python-versions
+        name: run-mypy-all-python-versions
+        entry: scripts/run-mypy-all-python-versions.sh
+        pass_filenames: false
+        language: python
+        # use your preferred Python version
+        language_version: python3.12
+        types: [python]
 
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.3.0"

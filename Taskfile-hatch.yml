@@ -12,6 +12,7 @@ tasks:
   show-env:
     # [private] show the environment
     cmds:
+      - python --version
       - hatch env show
 
   update-venv:
@@ -70,8 +71,6 @@ tasks:
     # called from the "pre-commit" hook and the "task build"
     cmds:
       - task: check-pyproject
-      # run unit tests
-      - task: tests
 
   build:
     desc: Build the project.
@@ -96,7 +95,7 @@ tasks:
       - task: update-venv
       # check licenses
       - task: check-licenses
-      # generate unit test coverage reports
+      # run unit test and generate coverage reports
       - task: coverage
       # generate code metrics
       - task: metrics

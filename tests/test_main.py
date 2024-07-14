@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import shutil
+import tempfile
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,28 @@ def test_main_help(capsys: CaptureFixture[Any]) -> None:
     assert e.value.code == 0
     captured = capsys.readouterr()
     assert "--version" in captured.out
+
+
+def test_quiet(capsys: CaptureFixture[Any]) -> None:
+    assert main(["--quiet", "--config", str(tests_dir / "config_2.toml")]) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+
+def test_invalid_loglevel(capsys: CaptureFixture[Any]) -> None:
+    with pytest.raises(SystemExit):
+        main(["--loglevel", "1", "--config", str(tests_dir / "config_2.toml")])
+    captured = capsys.readouterr()
+    assert "error: argument --loglevel:" in captured.err
+
+
+def test_logfile() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        filepath = Path(tmp) / "test_logfile.log"
+        assert main(["--longhelp", "--logfile", str(filepath)]) == 0
+        assert filepath.exists()
+        assert filepath.is_file()
+        assert filepath.stat().st_size > 0
 
 
 def test_load_config_file_debug(capsys: CaptureFixture[Any]) -> None:
@@ -88,6 +111,8 @@ def test_debug_flags_false(capsys: CaptureFixture[Any]) -> None:
     captured = capsys.readouterr()
     assert "project_requirements" not in captured.err
 
+
+def test_debug_flags_debug(capsys: CaptureFixture[Any]) -> None:
     # with --loglevel DEBUG
     assert main(["--loglevel", "DEBUG", str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
