@@ -132,6 +132,7 @@ Let's start with just running task:
     * coverage:               Run the unit tests with coverage.
     * docs:                   Create the project documentation and open in the browser.
     * format:                 Check and reformat the code to a coding standard.
+    * init:                   initialize new project (only run once upon first creation of project).
     * lint:                   Perform static code analysis.
     * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
     * metrics:                Analyze the code.
