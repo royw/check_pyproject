@@ -19,6 +19,9 @@ tasks:
       - pre-commit run ruff --all-files >/dev/null || true
       - git commit -m "Initial Framework."
       - task: update-venv
+    status:
+      -  # do not run the init task if there is a .git/ directory
+      - test -d .git
 
   default:
     cmds:

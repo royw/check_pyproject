@@ -23,6 +23,9 @@ tasks:
       - pre-commit run ruff --all-files >/dev/null || true
       - git commit -m "Initial Framework."
       - poetry install
+    status:
+      -  # do not run the init task if there is a .git/ directory
+      - test -d .git
 
   show-env:
     # [private] show the environment
