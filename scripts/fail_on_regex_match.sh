@@ -10,5 +10,5 @@ then
   exit 1
 fi
 
-git ls-files | grep -Ev ".pre-commit-config.yaml|Taskfile.*\.yml|scripts/" | xargs grep -EH "$1"
+git ls-files | grep -Ev ".pre-commit-config.yaml|Taskfile.*\.yml|scripts/|.*\.md" | xargs grep -EH "$1"
 [ $? -eq 123 ]

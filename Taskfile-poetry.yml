@@ -9,9 +9,25 @@ tasks:
     cmds:
       - task --list
 
+  init:
+    desc: initialize new project (only run once upon first creation of project).
+    cmds:
+      - git init .
+      - git add docs LICENSES scripts src tests .gitignore
+        .pre-commit-config.yaml DEV-README.md mkdocs.yml pyproject.toml
+        README.md Taskfile-hatch.yml Taskfile-poetry.yml tox.ini
+      # Realizing the template can mess up formatting of the files
+      - pre-commit run blacken-docs --all-files >/dev/null || true
+      - pre-commit run trailing-whitespace --all-files >/dev/null || true
+      - pre-commit run prettier --all-files >/dev/null || true
+      - pre-commit run ruff --all-files >/dev/null || true
+      - git commit -m "Initial Framework."
+      - poetry install
+
   show-env:
     # [private] show the environment
     cmds:
+      - python --version
       - poetry env list
       - poetry env info
 
@@ -32,8 +48,7 @@ tasks:
     desc: Perform static code analysis.
     cmds:
       - poetry run -- ruff check --config pyproject.toml --fix src tests
-      - poetry run -- mypy --strict --python-version 3.11 src/ tests/
-      - poetry run -- mypy --strict --python-version 3.12 src/ tests/
+      - poetry run -- scripts/run-mypy-all-python-versions.sh
       - poetry run -- fawltydeps --detailed || true
       - poetry run -- reuse lint
       - poetry run -- pyupgrade --py311-plus
@@ -54,7 +69,7 @@ tasks:
       Check the consistency between poetry and hatch in the pyproject.toml file.
     cmds:
       # check that project and tool.poetry tables are in sync
-      - poetry run -- python3 -m check_pyproject --loglevel INFO
+      - poetry run -- .venv/bin/python3 -m check_pyproject --loglevel INFO
 
   check-licenses:
     desc: Check that all dependency licenses are acceptable for this project.
@@ -63,7 +78,7 @@ tasks:
       - poetry run -- liccheck -s pyproject.toml
       # add any missing copyrights
       - git diff --name-only --cached | xargs -I {} poetry run -- reuse annotate
-        -c "$(git config --get user.name)" "{}"
+        --skip-unrecognised -c "$(git config --get user.name)" "{}"
       # create software bill of materials
       - poetry run -- reuse spdx -o reuse.spdx
 
@@ -94,7 +109,7 @@ tasks:
       - poetry build
       # install current build into dev virtual environment
       - task: update-venv
-      # generate code metrics
+      # check licenses
       - task: check-licenses
       # run unit test and generate coverage reports
       - task: coverage
@@ -108,7 +123,7 @@ tasks:
   version:
     desc: Run the project, having it return its version.
     cmds:
-      - poetry run python3 -m check_pyproject -- --version
+      - poetry run -- python3 -m check_pyproject -- --version
 
   metrics:
     desc: Analyze the code.
@@ -116,8 +131,8 @@ tasks:
       - bash -c "mkdir -p metrics"
       - poetry run -- radon cc --show-complexity --json --min=A
         --output-file=metrics/code-complexity.json src/
-      - poetry run -- radon cc --show-complexity --min=A src/ -- | tail -n +1 |
-        head -10
+      - poetry run -- cat metrics/code-complexity.json |
+        scripts/metrics_cc_filter.py | head -n 20
       - poetry run -- radon hal --json
         --output-file=metrics/halstead-metrics.json src/
       - poetry run -- radon mi --json
@@ -172,7 +187,10 @@ tasks:
       - poetry run -- python3 scripts/swap_build_system.py hatch
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-hatch.yml Taskfile.yml
-      - task: show-env
+      - hatch run echo "Creating virtualenv in .venv"
+      # show env using hatch
+      - python --version
+      - hatch env show
 
   switch-to-poetry:
     desc: Switch development to use poetry instead of hatch.
@@ -190,4 +208,4 @@ tasks:
       "Run the __main__ module code, passing arguments to the module.  Example:
       task main -- --version"
     cmds:
-      - poetry run python3 -m check_pyproject {{.CLI_ARGS}}
+      - poetry run -- python3 -m check_pyproject {{.CLI_ARGS}}

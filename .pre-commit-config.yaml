@@ -92,7 +92,7 @@ repos:
         name: Disallow improper capitalization
         language: pygrep
         entry: PyBind|Numpy|Cmake|CCache|Github|PyTest
-        exclude: ^(\.pre-commit-config\.yaml|Taskfile-.*\.yml)$
+        exclude: ^(\.pre-commit-config\.yaml|Taskfile-.*\.yml|.*\.md)$
 
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: "v0.18"
@@ -118,3 +118,5 @@ repos:
         language_version: python3.12
         types: [python]
         verbose: true
+        additional_dependencies:
+          - check-pyproject@git+https://github.com/royw/check_pyproject.git

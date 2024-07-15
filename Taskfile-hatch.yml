@@ -5,6 +5,21 @@
 version: "3"
 
 tasks:
+  init:
+    desc: initialize new project (only run once upon first creation of project).
+    cmds:
+      - git init .
+      - git add docs LICENSES scripts src tests .gitignore
+        .pre-commit-config.yaml DEV-README.md mkdocs.yml pyproject.toml
+        README.md Taskfile-hatch.yml Taskfile-poetry.yml tox.ini
+      # Realizing the template can mess up formatting of the files
+      - pre-commit run blacken-docs --all-files >/dev/null || true
+      - pre-commit run trailing-whitespace --all-files >/dev/null || true
+      - pre-commit run prettier --all-files >/dev/null || true
+      - pre-commit run ruff --all-files >/dev/null || true
+      - git commit -m "Initial Framework."
+      - task: update-venv
+
   default:
     cmds:
       - task --list
@@ -31,8 +46,7 @@ tasks:
     desc: Perform static code analysis.
     cmds:
       - hatch run -- dev:ruff check --config pyproject.toml --fix src tests
-      - hatch -e dev run -- mypy --strict --python-version 3.11 src/ tests/
-      - hatch -e dev run -- mypy --strict --python-version 3.12 src/ tests/
+      - hatch -e dev run -- scripts/run-mypy-all-python-versions.sh
       - hatch run -- dev:fawltydeps --detailed || true
       - hatch -e dev run -- reuse lint
       - hatch run -- dev:pyupgrade --py311-plus
@@ -115,8 +129,8 @@ tasks:
       - bash -c "mkdir -p metrics"
       - hatch run -- metrics:radon cc --show-complexity --json --min=A
         --output-file=metrics/code-complexity.json src/
-      - hatch run -- metrics:radon cc --show-complexity --min=A src/ -- | tail
-        -n +1 | head -10
+      - hatch run -- cat metrics/code-complexity.json |
+        scripts/metrics_cc_filter.py | head -n 20
       - hatch run -- metrics:radon hal --json
         --output-file=metrics/halstead-metrics.json src/
       - hatch run -- metrics:radon mi --json
@@ -169,6 +183,7 @@ tasks:
       - hatch -e dev run -- python3 scripts/swap_build_system.py hatch
       - task: clean
       - rm -rf Taskfile.yml ; ln -s Taskfile-hatch.yml Taskfile.yml
+      - hatch run echo "Creating virtualenv in .venv"
       - task: show-env
 
   switch-to-poetry:
@@ -180,7 +195,9 @@ tasks:
       - poetry config virtualenvs.in-project true
       - poetry lock
       - poetry install
-      - task: show-env
+      # show env using poetry
+      - poetry env list
+      - poetry env info
 
   main:
     desc:
