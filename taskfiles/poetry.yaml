@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+version: "3"
+
+vars:
+  DEFAULT_RUNNER: poetry run --
+  DEV_RUNNER: poetry run --
+  DOCS_RUNNER: poetry run --
+  TEST_RUNNER: poetry run --
+  METRICS_RUNNER: poetry run --
+  SPHINX_RUNNER: poetry run --
+
+tasks:
+  make_dist_packages:
+    # [private] build dist packages
+    cmds:
+      - poetry build
+
+  env_prune:
+    # [private] remove development environment (i.e. virtual environments)
+    cmds:
+      - poetry env remove --all
+
+  show-env:
+    # [private] show this front ends environment
+    cmds:
+      - task: poetry-show-env
+
+  hatch-show-env:
+    # [private] show the environment using hatch
+    cmds:
+      - echo "Creating virtualenv in .venv"
+      - python --version
+      - hatch env show
+
+  poetry-show-env:
+    # [private] show env using poetry
+    cmds:
+      - echo "Creating virtualenv in .venv"
+      - python --version
+      - poetry env list
+      - poetry env info
+
+  setuptools-show-env:
+    # [private] show the environment
+    cmds:
+      - python --version
+      - echo 'TODO setuptools show environment'
+
+  unit-tests:
+    # [private] Run the unit tests for the supported versions of python.
+    cmds:
+      # for poetry, tox is used for multiple python testing
+      - "{{.TEST_RUNNER}} pytest tests"
+      - "{{.TEST_RUNNER}} tox"
+
+  update-venv:
+    cmds:
+      # [private] update development virtual environment
+      - poetry update
+      - "{{.DEV_RUNNER}} pip install --upgrade pip"
+      # install project into virtual environment
+      - poetry install
