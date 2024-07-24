@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+# FIXME this is not working, it is like the reuse utility does not read this file.
+
+version = 1
+
+[[annotations]]
+path = "requirements/*.txt"
+precedence = "override"
+SPDX-FileCopyrightText = "2024 Roy Wright"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "requirements.txt"
+precedence = "override"
+SPDX-FileCopyrightText = "2024 Roy Wright"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "poetry.lock"
+precedence = "override"
+SPDX-FileCopyrightText = "2024 Roy Wright"
+SPDX-License-Identifier = "MIT"

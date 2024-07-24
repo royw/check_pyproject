@@ -13,3 +13,6 @@ site/
 reuse.spdx
 **/*_cache/
 **/.cache/
+tests/*.lastrun
+taskfiles/front-end.yaml
+**/requirements*.txt*

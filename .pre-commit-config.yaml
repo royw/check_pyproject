@@ -92,7 +92,7 @@ repos:
         name: Disallow improper capitalization
         language: pygrep
         entry: PyBind|Numpy|Cmake|CCache|Github|PyTest
-        exclude: ^(\.pre-commit-config\.yaml|Taskfile-.*\.yml|.*\.md)$
+        exclude: ^(\.pre-commit-config\.yaml|Taskfile.*\.ya?ml|.*\.md)$
 
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: "v0.18"
@@ -106,17 +106,16 @@ repos:
       - id: check-dependabot
       - id: check-github-workflows
       - id: check-readthedocs
-
-  - repo: local
-    hooks:
-      - id: task_pre_commit
-        name: task_pre_commit
-        entry: task pre-commit
-        pass_filenames: false
-        language: python
-        # use your preferred Python version
-        language_version: python3.12
-        types: [python]
-        verbose: true
-        additional_dependencies:
-          - check-pyproject@git+https://github.com/royw/check_pyproject.git
+#  - repo: local
+#    hooks:
+#      - id: task_pre_commit
+#        name: task_pre_commit
+#        entry: task pre-commit
+#        pass_filenames: false
+#        language: python
+#        # use your preferred Python version
+#        language_version: python3.12
+#        types: [python]
+#        verbose: true
+#        additional_dependencies:
+#          - check-pyproject@git+https://github.com/royw/check_pyproject.git

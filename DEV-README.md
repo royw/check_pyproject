@@ -137,9 +137,13 @@ Let's start with just running task:
     * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
     * metrics:                Analyze the code.
     * pre-commit:             Must pass before allowing version control commit.
+    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
     * serve-docs:             Start the documentation server and open browser at localhost:8000.
     * switch-to-hatch:        Switch development to use hatch instead of poetry.
     * switch-to-poetry:       Switch development to use poetry instead of hatch.
+    * switch-to-setuptools:   Switch development to use setuptools.
     * tests:                  Run the unit tests for the supported versions of python.
     * version:                Run the project, having it return its version.
 
@@ -167,6 +171,10 @@ errors, build it,...
 But say I prefer hatch, it is easy to switch:
 
     ➤ task switch-to-hatch
+
+or maybe setuptools:
+
+    ➤ task switch-to-setuptools
 
 and to switch back to poetry with:
 
@@ -209,6 +217,9 @@ the available task list:
     * docs:                   Create the project documentation and open in the browser.
     * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
     * pre-commit:             Must pass before allowing version control commit.
+    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
     * serve-docs:             Start the documentation server and open browser at localhost:8000.
     * tests:                  Run the unit tests for the supported versions of python.
 
@@ -248,6 +259,9 @@ Removing the tests, coverage, and pre-commit tasks from the available task list:
     * clean:                  Remove virtual environments and generated files.
     * docs:                   Create the project documentation and open in the browser.
     * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
     * serve-docs:             Start the documentation server and open browser at localhost:8000.
 
 The clean task is pretty self-evident. If you want a totally clean environment,
@@ -277,6 +291,18 @@ Note that build-docs is included in the build task, so you might want to just
 run `task serve-docs` and examine your documentation. Now if you were in a
 documentation editing phase, then the `task docs` would both build and show the
 built documentation.
+
+Now we are down to
+
+    * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
+
+The reuse tasks support using the SPDX reuse system. You may enable or disable
+using the system. The `reuse-lint` task is usually called by the `lint` task and
+just conditionally runs "reuse lint" if reuse is enabled in the pyproject.toml
+file's `tool.taskfile` table.
 
 And that leaves us with the main task, which is just a shortcut for running the
 project in the project manager's virtual environment. Try it:
@@ -498,8 +524,8 @@ running `task pre-commit`.
 
 Poetry will resolve dependencies then write them into the `poetry.lock` file,
 which probably should in your version control system. The purpose of the
-lockfile is to ensure that exactly the same versions of all of the dependencies
-are installed each time.
+lockfile is to ensure that exactly the same versions of all the dependencies are
+installed each time.
 
 Hatch currently does not have an equivalent feature. There is a plugin,
 [hatch-pip-compile](https://juftin.com/hatch-pip-compile/) that manages project
@@ -513,6 +539,22 @@ projects where legal wants all the licenses we are using. Not a fun exercise. So
 REUSE aims to facilitate managing a project's licenses. The pain point is adding
 a copyright/license header to every file. The sweet point is automated bill of
 material reporting. Time will tell...
+
+Until then, I made using reuse optional. I added a table and setting to the
+pyproject.toml:
+
+    ### local Taskfile.yml options (not Taskfile options)
+
+    [tool.taskfile]
+    # For reuse copyright/license checking set reuse to either "enabled" or "disabled"
+    # You should not directly edit this setting.  Instead, use the tasks "task reuse-enable" and
+    # "task reuse-disable" as they also update the .git/hooks/pre-commit to either skip or not
+    # skip the reuse hook.
+    reuse = "disabled"
+
+and split running reuse lint from the `lint` task to a new `reuse-lint` task
+dependent upon the above reuse setting. All controlled with the `reuse-enable`
+and `reuse-disable` tasks
 
 ### git
 

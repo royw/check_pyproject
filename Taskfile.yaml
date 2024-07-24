@@ -1,0 +1,287 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+version: "3"
+
+includes:
+  fe: taskfiles/front-end.yaml
+
+vars:
+  DEFAULT_RUNNER: "{{.fe.DEFAULT_RUNNER}}"
+  DEV_RUNNER: "{{.fe.DEV_RUNNER}}"
+  DOCS_RUNNER: "{{.fe.DOCS_RUNNER}}"
+  TEST_RUNNER: "{{.fe.TEST_RUNNER}}"
+  METRICS_RUNNER: "{{.fe.METRICS_RUNNER}}"
+  SPHINX_RUNNER: "{{.fe.SPHINX_RUNNER}}"
+
+  BUILD_FRONTEND:
+    sh:
+      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+      tool.taskfile.build-frontend"
+
+  AUTHOR:
+    sh:
+      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+      project.authors[0].name"
+
+  LICENSE:
+    sh:
+      '{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.license.file
+      | grep -Po "([^/]+)(?=\.txt)"'
+
+  REUSE_ENABLED:
+    sh:
+      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml tool.taskfile.reuse"
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  init:
+    desc: initialize new project (only run once upon first creation of project).
+    cmds:
+      - git init .
+      - git add docs LICENSES scripts src tests .gitignore
+        .pre-commit-config.yaml DEV-README.md mkdocs.yml pyproject.toml
+        README.md Taskfile-*.yml tox.ini
+      # Realizing the template can mess up formatting of the files
+      - pre-commit run blacken-docs --all-files >/dev/null || true
+      - pre-commit run trailing-whitespace --all-files >/dev/null || true
+      - pre-commit run prettier --all-files >/dev/null || true
+      - pre-commit run ruff --all-files >/dev/null || true
+      - git commit -m "Initial Framework."
+      - pre-commit install
+      - task: reuse-enable
+      - task: fe:update-venv
+    status:
+      -  # do not run the init task if there is a .git/ directory
+      - test -d .git
+
+  reuse-enable:
+    desc: Enable using SPDX reuse for enforcing copyright and license.
+    cmds:
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml tool.taskfile.reuse
+        "enabled"'
+      - sed --in-place=.bak '/export SKIP=.*$/d' .git/hooks/pre-commit
+
+  reuse-disable:
+    desc: Disable using SPDX reuse for enforcing copyright and license.
+    cmds:
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml tool.taskfile.reuse
+        "disabled"'
+      - sed --in-place=.bak '/export SKIP=.*$/d' .git/hooks/pre-commit
+      - sed --in-place=.bak "/# start templated/a\export SKIP='reuse'"
+        .git/hooks/pre-commit
+
+  reuse-lint:
+    desc:
+      'Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to
+      "enabled"'
+    cmds:
+      - '{{.DEV_RUNNER}} reuse annotate --copyright "{{.AUTHOR}}" --license
+        "{{.LICENSE}}" --force-dot-license --skip-existing requirements.txt
+        requirements/requirements*.txt | grep "Successfully" || true'
+      - "{{.DEV_RUNNER}} reuse lint"
+    status:
+      - test "{{.REUSE_ENABLED}}" = "disabled"
+
+  #  validate-pyproject:
+  #    cmds:
+  #      # [private] validate the pyproject.toml file
+  #      - "{{.DEV_RUNNER}} validate-pyproject pyproject.toml"
+
+  lint:
+    desc: Perform static code analysis.
+    cmds:
+      - "{{.DEV_RUNNER}} ruff check --config pyproject.toml --fix src tests"
+      - "{{.DEV_RUNNER}} scripts/run-mypy-all-python-versions.sh"
+      - "{{.DEV_RUNNER}} fawltydeps --detailed || true"
+      - task: reuse-lint
+      - "{{.DEV_RUNNER}} pyupgrade --py311-plus"
+      # Disallow improper capitalization
+      - scripts/fail_on_regex_match.sh "PyBind|Numpy|Cmake|CCache|Github|PyTest"
+      # lint shell scripts
+      - 'git ls-files -z -- "*.sh" | xargs -0 {{.DEV_RUNNER}} shellcheck'
+
+  format:
+    desc: Check and reformat the code to a coding standard.
+    cmds:
+      - "{{.DEV_RUNNER}} ruff format --config pyproject.toml src tests"
+      - 'git ls-files -z -- "*.md" "*.py" | xargs -0 --verbose {{.DEV_RUNNER}}
+        blacken-docs'
+
+  check-pyproject:
+    desc:
+      Check the consistency between poetry and hatch in the pyproject.toml file.
+    cmds:
+      # check that project and tool.poetry tables are in sync
+      - "{{.DEV_RUNNER}} python3 -m check_pyproject --loglevel INFO"
+
+  check-licenses:
+    desc: Check that all dependency licenses are acceptable for this project.
+    cmds:
+      # check licenses
+      - "{{.DEV_RUNNER}} liccheck -s pyproject.toml"
+      - task: check-reuse
+
+  check-reuse:
+    cmds:
+      # add any missing copyrights
+      - 'git diff --name-only --cached | xargs -I {} {{.DEV_RUNNER}} reuse
+        annotate -c "$(git config --get user.name)" "{}"'
+      # create software bill of materials
+      - "{{.DEV_RUNNER}} reuse spdx -o reuse.spdx"
+    status:
+      - test "{{.REUSE_ENABLED}}" = "disabled"
+
+  pre-commit:
+    desc: Must pass before allowing version control commit.
+    # called from the "pre-commit" hook and the "task build"
+    cmds:
+      - task: check-pyproject
+
+  execute-pre-commit:
+    # [private] internal task for running the pre-commit utility directly and conditionally skipping reuse hook
+    vars:
+      SKIP:
+        sh:
+          if test "{{.REUSE_ENABLED}}" = "disabled"; then echo "reuse"; else
+          echo ""; fi
+    cmds:
+      - SKIP="{{.SKIP}}" pre-commit run --all-files || True
+
+  build:
+    desc: Build the project.
+    summary: |
+      Build the project
+
+      Format the project, check for code quality, check for compliance,
+      perform unit testing, build distributables, build documentation,
+      and run the application to display its version.
+    cmds:
+      # show project's environment
+      - task: fe:show-env
+      # format the source code
+      - task: format
+      # check for programming errors/warnings
+      - task: lint
+      # check that code can be committed to vcs
+      - task: execute-pre-commit
+      # create dist packages
+      - task: fe:make_dist_packages
+      # install current build into dev virtual environment
+      - task: fe:update-venv
+      # check licenses
+      - task: check-licenses
+      # run unit test and generate coverage reports
+      - task: coverage
+      # generate code metrics
+      - task: metrics
+      # build documentation
+      - task: build-docs
+      # actually run the built application, getting its version
+      - task: version
+
+  tests:
+    desc: Run the unit tests for the supported versions of python.
+    cmds:
+      # hatch supports matrix testing for multiple python coverage
+      - task: unit-tests
+
+  version:
+    desc: Run the project, having it return its version.
+    cmds:
+      - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject --version"
+
+  metrics:
+    desc: Analyze the code.
+    cmds:
+      - bash -c "mkdir -p metrics"
+      - "{{.METRICS_RUNNER}} radon cc --show-complexity --json --min=A
+        --output-file=metrics/code-complexity.json src/"
+      - "{{.METRICS_RUNNER}}  cat metrics/code-complexity.json |
+        scripts/metrics_cc_filter.py | head -n 20"
+      - "{{.METRICS_RUNNER}} radon hal --json
+        --output-file=metrics/halstead-metrics.json src/"
+      - "{{.METRICS_RUNNER}} radon mi --json
+        --output-file=metrics/maintainability-index.json src/"
+      - "{{.METRICS_RUNNER}} radon raw --json
+        --output-file=metrics/raw-metrics.json src/"
+
+  coverage:
+    desc: Run the unit tests with coverage.
+    cmds:
+      - "{{.TEST_RUNNER}} pytest --cov-report term-missing --cov-report
+        json:metrics/coverage.json --cov=check_pyproject tests"
+
+  docs:
+    desc: Create the project documentation and open in the browser.
+    cmds:
+      - task: build-docs
+      - task: serve-docs
+
+  build-docs:
+    desc: Build the documentation.
+    cmds:
+      - "{{.DOCS_RUNNER}} mkdocs --quiet build"
+
+  serve-docs:
+    desc: Start the documentation server and open browser at localhost:8000.
+    cmds:
+      - "{{.DOCS_RUNNER}} mkdocs serve --open"
+
+  clean:
+    desc: Remove virtual environments and generated files.
+    cmds:
+      - task: fe:env_prune
+      - rm -rf .tox
+      - rm -rf .nox
+      - rm -rf dist
+      - rm -rf metrics
+      - rm -rf site
+      - rm -rf tests/__pycache__
+      - rm -rf .*_cache
+      - rm -f requirements.txt
+      - rm -f requirements.txt.license
+      - rm -f requirements/requirements*.txt
+      - rm -f requirements/requirements*.txt.license
+      - rm -f poetry.lock
+
+  switch-to-hatch:
+    desc: Switch development to use hatch.
+    cmds:
+      - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py hatch"
+      - task: clean
+      - rm -f taskfiles/front-end.yaml
+      - ln -s hatch.yaml taskfiles/front-end.yaml
+      - task: fe:hatch-show-env
+
+  switch-to-poetry:
+    desc: Switch development to use poetry.
+    cmds:
+      - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py poetry"
+      - task: clean
+      - rm -f taskfiles/front-end.yaml
+      - ln -s poetry.yaml taskfiles/front-end.yaml
+      - poetry config virtualenvs.in-project true
+      - poetry lock
+      - poetry install
+      - task: fe:poetry-show-env
+
+  switch-to-setuptools:
+    desc: Switch development to use setuptools.
+    cmds:
+      - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py setuptools"
+      - rm -f taskfiles/front-end.yaml
+      - ln -s setuptools.yaml taskfiles/front-end.yaml
+      - task: clean
+      - task: fe:setuptools-show-env
+
+  main:
+    desc:
+      "Run the __main__ module code, passing arguments to the module.  Example:
+      task main -- --version"
+    cmds:
+      - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject {{.CLI_ARGS}}"
