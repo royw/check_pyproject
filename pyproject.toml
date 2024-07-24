@@ -498,7 +498,6 @@ exclude_also = [
 # "task reuse-disable" as they also update the .git/hooks/pre-commit to either skip or not
 # skip the reuse hook.
 reuse = "disabled"
-build-frontend = "hatch"
 
 ### Poetry build system
 
