@@ -61,3 +61,23 @@ tasks:
       - "{{.DEV_RUNNER}} pip install --upgrade pip"
       # install project into virtual environment
       - "{{.DEV_RUNNER}} pip install --no-deps -e ."
+
+  hatch_lockfiles_enable:
+    desc:
+      Enable hatch backend to use requirements.txt files managed by pip-compile
+      as lock files.
+    cmds:
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
+        tool.hatch.env.requires --to-array "[\"hatch-pip-compile\"]"'
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
+        tool.hatch.envs.default.type "pip-compile"'
+
+  hatch_lockfiles_disable:
+    desc:
+      Disable hatch backend to use requirements.txt files managed by pip-compile
+      as lock files.
+    cmds:
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
+        tool.hatch.env.requires --to-array "[]"'
+      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
+        tool.hatch.envs.default.type "virtual"'

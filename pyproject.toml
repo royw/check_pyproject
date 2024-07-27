@@ -258,14 +258,12 @@ allow-direct-references = true
 # `hatch run pytest`
 
 [tool.hatch.env]
-requires = [
-    "hatch-pip-compile"
-]
+requires = []
 
 [tool.hatch.envs.default]
 features = ["dev", "docs", "test", "metrics"]
-#type = "virtual"
-type = "pip-compile"
+type = "virtual"
+path = ".venv"
 pip-compile-resolver = "uv"   # pip, uv
 pip-compile-verbose = false
 pip-compile-installer = "uv"   # pip, pip-sync, uv
@@ -273,7 +271,6 @@ pip-compile-install-args = []
 pip-compile-constraint = "default"
 pip-compile-hashes = false
 pip-compile-args = []
-path = ".venv"
 
 [tool.hatch.envs.dev]
 features = ["dev", "docs", "test", "metrics"]

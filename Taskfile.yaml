@@ -15,11 +15,6 @@ vars:
   METRICS_RUNNER: "{{.fe.METRICS_RUNNER}}"
   SPHINX_RUNNER: "{{.fe.SPHINX_RUNNER}}"
 
-  BUILD_FRONTEND:
-    sh:
-      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
-      tool.taskfile.build-frontend"
-
   AUTHOR:
     sh:
       "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
@@ -45,7 +40,8 @@ tasks:
       - git init .
       - git add docs LICENSES scripts src tests .gitignore
         .pre-commit-config.yaml DEV-README.md mkdocs.yml pyproject.toml
-        README.md Taskfile-*.yml tox.ini
+        README.md Taskfile.yaml taskfiles/hatch.yaml taskfiles/poetry.yaml
+        tox.ini
       # Realizing the template can mess up formatting of the files
       - pre-commit run blacken-docs --all-files >/dev/null || true
       - pre-commit run trailing-whitespace --all-files >/dev/null || true
@@ -56,7 +52,7 @@ tasks:
       - task: reuse-enable
       - task: fe:update-venv
     status:
-      -  # do not run the init task if there is a .git/ directory
+      # do not run the init task if there is a .git/ directory
       - test -d .git
 
   reuse-enable:
@@ -80,12 +76,14 @@ tasks:
       'Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to
       "enabled"'
     cmds:
-      - '{{.DEV_RUNNER}} reuse annotate --copyright "{{.AUTHOR}}" --license
-        "{{.LICENSE}}" --force-dot-license --skip-existing requirements.txt
-        requirements/requirements*.txt | grep "Successfully" || true'
+      - 'find . -name "requirements*.txt" -exec {{.DEV_RUNNER}} reuse annotate
+        --copyright "{{.AUTHOR}}" --license "{{.LICENSE}}" --force-dot-license
+        --skip-existing "{}" \; | grep "Successfully" || true'
       - "{{.DEV_RUNNER}} reuse lint"
     status:
-      - test "{{.REUSE_ENABLED}}" = "disabled"
+      # if return is false, run the above commands
+      - $( ! $( $(test "{{.REUSE_ENABLED}}" = "enabled") && [[ $(ls -1
+        requirements*.txt **/requirements*.txt 2>/dev/null | wc -l) > 0 ]] ) )
 
   #  validate-pyproject:
   #    cmds:
@@ -201,7 +199,7 @@ tasks:
       - bash -c "mkdir -p metrics"
       - "{{.METRICS_RUNNER}} radon cc --show-complexity --json --min=A
         --output-file=metrics/code-complexity.json src/"
-      - "{{.METRICS_RUNNER}}  cat metrics/code-complexity.json |
+      - "cat metrics/code-complexity.json | {{.METRICS_RUNNER}} python3
         scripts/metrics_cc_filter.py | head -n 20"
       - "{{.METRICS_RUNNER}} radon hal --json
         --output-file=metrics/halstead-metrics.json src/"
@@ -214,7 +212,7 @@ tasks:
     desc: Run the unit tests with coverage.
     cmds:
       - "{{.TEST_RUNNER}} pytest --cov-report term-missing --cov-report
-        json:metrics/coverage.json --cov=check_pyproject tests"
+        json:metrics/coverage.json --cov=./ tests"
 
   docs:
     desc: Create the project documentation and open in the browser.
