@@ -13,41 +13,27 @@ vars:
   SPHINX_RUNNER: poetry run --
 
 tasks:
-  make_dist_packages:
+  make-dist-packages:
     # [private] build dist packages
     cmds:
       - poetry build
 
-  env_prune:
+  env-prune:
     # [private] remove development environment (i.e. virtual environments)
     cmds:
       - poetry env remove --all
 
+  make-env:
+    desc: create virtual environment
+    cmds:
+      - poetry run -- true
+
   show-env:
-    # [private] show this front ends environment
-    cmds:
-      - task: poetry-show-env
-
-  hatch-show-env:
-    # [private] show the environment using hatch
-    cmds:
-      - echo "Creating virtualenv in .venv"
-      - python --version
-      - hatch env show
-
-  poetry-show-env:
     # [private] show env using poetry
     cmds:
       - echo "Creating virtualenv in .venv"
-      - python --version
       - poetry env list
       - poetry env info
-
-  setuptools-show-env:
-    # [private] show the environment
-    cmds:
-      - python --version
-      - echo 'TODO setuptools show environment'
 
   unit-tests:
     # [private] Run the unit tests for the supported versions of python.

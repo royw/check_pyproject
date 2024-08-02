@@ -53,18 +53,25 @@ tables, is roughly in-sync.
 ## Prerequisites
 
 - Install the task manager: [Task](https://taskfile.dev/)
-- Optionally install [Poetry](https://python-poetry.org/)
-- Optionally install [Hatch](https://hatch.pypa.io/)
 - Optionally install [pyenv-installer](https://github.com/pyenv/pyenv-installer)
 
   - Install dependent pythons, example:
 
     `pyenv local 3.11.9 3.12.3`
 
-_Note you may need to install some libraries for the pythons to compile
-cleanly._ _For example on ubuntu (note I prefer `nala` over `apt`):_
+  _Note you may need to install some libraries for the pythons to compile
+  cleanly._ _For example on ubuntu (note I prefer `nala` over `apt`):_
 
-`sudo nala install tk-dev libbz2-dev libreadline-dev libsqlite3-dev lzma-dev python3-tk libreadline-dev`
+  `sudo nala install tk-dev libbz2-dev libreadline-dev libsqlite3-dev lzma-dev python3-tk libreadline-dev`
+
+- Recommended to upgrade pip to latest.
+- Optionally install [Poetry](https://python-poetry.org/)
+- Optionally install [Hatch](https://hatch.pypa.io/)
+  - Install [pip-tools](https://pypi.org/project/pip-tools/)
+- Optionally install [setuptools](https://setuptools.pypa.io/)
+  - Install [build](https://build.pypa.io/)
+  - Install [pip-tools](https://pypi.org/project/pip-tools/)
+  - Install [twine](https://twine.readthedocs.io/)
 
 ## Installation
 
@@ -88,7 +95,7 @@ workflow is:
 
     task clean  # removes all build artifacts (metrics, docs,...)
     task build  # lints, formats, checks pyproject.toml, and generates metrics, performs unit tests,
-                  performs tox testing, and creates the package.
+                  performs multi-python version testing, and creates the package.
     task docs   # creates local documentation, starts a local server, opens the home page of the documents in a browser.
     task main   # launches the application in the poetry environment.
 
@@ -97,16 +104,22 @@ or not even use it.
 
 ### Switching between Poetry and Hatch
 
-Two tasks support switching the build system:
+The tasks that support switching the build system:
 
     task switch-to-poetry
     task switch-to-hatch
+    task switch-to-setuptools
 
-They set the symbolic link for `Taskfile.yml` to either `Taskfile-poetry.yml` or
-`Taskfile-hatch.yml`.
+They set the symbolic link for `taskfiles/front-end.yaml` to the appropriate
+`taskfiles/poetry.yaml`, `taskfiles/hatch.yaml`, or `taskfiles/setuptools.yaml`.
+Note that `taskfiles/front-end.yaml` is imported by `Taskfile.yaml` as `fe`
+which stands for "front end":
 
-And they edit the `build-system` table in the `pyproject.toml` file to the
-appropriate back-end.
+    includes:
+      fe: taskfiles/front-end.yaml
+
+Also, the switch tasks edit the `build-system` table in the `pyproject.toml`
+file to the appropriate back-end.
 
 ### Adding a dependency using poetry
 

@@ -16,3 +16,4 @@ reuse.spdx
 tests/*.lastrun
 taskfiles/front-end.yaml
 **/requirements*.txt*
+src/*.egg-info

@@ -13,41 +13,32 @@ vars:
   SPHINX_RUNNER: hatch -e sphinx run --
 
 tasks:
-  make_dist_packages:
+  make-dist-packages:
     # [private] build dist packages
     cmds:
       - hatch -e dev build
 
-  env_prune:
+  env-prune:
     # [private] remove development environment (i.e. virtual environments)
     cmds:
       - hatch env prune
 
+  make-env:
+    desc: create virtual environment
+    cmds:
+      - hatch -e dev env create
+
   show-env:
-    # [private] show this front ends environment
-    cmds:
-      - task: hatch-show-env
-
-  hatch-show-env:
     # [private] show the environment using hatch
+    vars:
+      REQUIRES_PYTHON:
+        sh:
+          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          project.requires-python"
     cmds:
       - echo "Creating virtualenv in .venv"
-      - python --version
       - hatch env show
-
-  poetry-show-env:
-    # [private] show env using poetry
-    cmds:
-      - echo "Creating virtualenv in .venv"
-      - python --version
-      - poetry env list
-      - poetry env info
-
-  setuptools-show-env:
-    # [private] show the environment
-    cmds:
-      - python --version
-      - echo 'TODO setuptools show environment'
+      - echo "Requires python {{.REQUIRES_PYTHON}}"
 
   unit-tests:
     # [private] Run the unit tests for the supported versions of python.
@@ -60,9 +51,9 @@ tasks:
       # [private] update development virtual environment
       - "{{.DEV_RUNNER}} pip install --upgrade pip"
       # install project into virtual environment
-      - "{{.DEV_RUNNER}} pip install --no-deps -e ."
+      - "{{.DEV_RUNNER}} pip install -e .[dev,test,docs,metrics]"
 
-  hatch_lockfiles_enable:
+  hatch-lockfiles-enable:
     desc:
       Enable hatch backend to use requirements.txt files managed by pip-compile
       as lock files.
@@ -72,7 +63,7 @@ tasks:
       - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
         tool.hatch.envs.default.type "pip-compile"'
 
-  hatch_lockfiles_disable:
+  hatch-lockfiles-disable:
     desc:
       Disable hatch backend to use requirements.txt files managed by pip-compile
       as lock files.

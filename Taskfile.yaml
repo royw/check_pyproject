@@ -5,29 +5,23 @@
 version: "3"
 
 includes:
+  # "fe" stands for "front end"
   fe: taskfiles/front-end.yaml
+  hatch: taskfiles/hatch.yaml
+  poetry: taskfiles/poetry.yaml
+  setuptools: taskfiles/setuptools.yaml
 
 vars:
-  DEFAULT_RUNNER: "{{.fe.DEFAULT_RUNNER}}"
-  DEV_RUNNER: "{{.fe.DEV_RUNNER}}"
-  DOCS_RUNNER: "{{.fe.DOCS_RUNNER}}"
-  TEST_RUNNER: "{{.fe.TEST_RUNNER}}"
-  METRICS_RUNNER: "{{.fe.METRICS_RUNNER}}"
-  SPHINX_RUNNER: "{{.fe.SPHINX_RUNNER}}"
+  # Global variables are realized on file load, so cannot assume virtual environment is available.
+  # If you need the virtual environment to calculate a variable, use the vars section of the task
+  # that needs the variable.
 
-  AUTHOR:
-    sh:
-      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
-      project.authors[0].name"
-
-  LICENSE:
-    sh:
-      '{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.license.file
-      | grep -Po "([^/]+)(?=\.txt)"'
-
-  REUSE_ENABLED:
-    sh:
-      "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml tool.taskfile.reuse"
+#  DEFAULT_RUNNER: "{{.fe.DEFAULT_RUNNER}}"
+#  DEV_RUNNER: "{{.fe.DEV_RUNNER}}"
+#  DOCS_RUNNER: "{{.fe.DOCS_RUNNER}}"
+#  TEST_RUNNER: "{{.fe.TEST_RUNNER}}"
+#  METRICS_RUNNER: "{{.fe.METRICS_RUNNER}}"
+#  SPHINX_RUNNER: "{{.fe.SPHINX_RUNNER}}"
 
 tasks:
   default:
@@ -50,6 +44,7 @@ tasks:
       - git commit -m "Initial Framework."
       - pre-commit install
       - task: reuse-enable
+      - task: fe:make-venv
       - task: fe:update-venv
     status:
       # do not run the init task if there is a .git/ directory
@@ -75,6 +70,22 @@ tasks:
     desc:
       'Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to
       "enabled"'
+    vars:
+      AUTHOR:
+        sh:
+          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          project.authors[0].name"
+
+      LICENSE:
+        sh:
+          '{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          project.license.file | grep -Po "([^/]+)(?=\.txt)"'
+
+      REUSE_ENABLED:
+        sh:
+          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          tool.taskfile.reuse"
+
     cmds:
       - 'find . -name "requirements*.txt" -exec {{.DEV_RUNNER}} reuse annotate
         --copyright "{{.AUTHOR}}" --license "{{.LICENSE}}" --force-dot-license
@@ -84,11 +95,6 @@ tasks:
       # if return is false, run the above commands
       - $( ! $( $(test "{{.REUSE_ENABLED}}" = "enabled") && [[ $(ls -1
         requirements*.txt **/requirements*.txt 2>/dev/null | wc -l) > 0 ]] ) )
-
-  #  validate-pyproject:
-  #    cmds:
-  #      # [private] validate the pyproject.toml file
-  #      - "{{.DEV_RUNNER}} validate-pyproject pyproject.toml"
 
   lint:
     desc: Perform static code analysis.
@@ -125,6 +131,12 @@ tasks:
       - task: check-reuse
 
   check-reuse:
+    vars:
+      REUSE_ENABLED:
+        sh:
+          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          tool.taskfile.reuse"
+
     cmds:
       # add any missing copyrights
       - 'git diff --name-only --cached | xargs -I {} {{.DEV_RUNNER}} reuse
@@ -143,12 +155,17 @@ tasks:
   execute-pre-commit:
     # [private] internal task for running the pre-commit utility directly and conditionally skipping reuse hook
     vars:
+      REUSE_ENABLED:
+        sh:
+          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
+          tool.taskfile.reuse"
+
       SKIP:
         sh:
           if test "{{.REUSE_ENABLED}}" = "disabled"; then echo "reuse"; else
           echo ""; fi
     cmds:
-      - SKIP="{{.SKIP}}" pre-commit run --all-files || True
+      - SKIP="{{.SKIP}}" pre-commit run --all-files || true
 
   build:
     desc: Build the project.
@@ -168,7 +185,7 @@ tasks:
       # check that code can be committed to vcs
       - task: execute-pre-commit
       # create dist packages
-      - task: fe:make_dist_packages
+      - task: fe:make-dist-packages
       # install current build into dev virtual environment
       - task: fe:update-venv
       # check licenses
@@ -233,7 +250,7 @@ tasks:
   clean:
     desc: Remove virtual environments and generated files.
     cmds:
-      - task: fe:env_prune
+      - task: fe:env-prune
       - rm -rf .tox
       - rm -rf .nox
       - rm -rf dist
@@ -246,6 +263,12 @@ tasks:
       - rm -f requirements/requirements*.txt
       - rm -f requirements/requirements*.txt.license
       - rm -f poetry.lock
+      - task: deactivate
+
+  deactivate:
+    # [private] if a virtual environment is active, deactivate it.
+    cmds:
+      - source .venv/bin/deactivate 2>/dev/null || true
 
   switch-to-hatch:
     desc: Switch development to use hatch.
@@ -254,7 +277,8 @@ tasks:
       - task: clean
       - rm -f taskfiles/front-end.yaml
       - ln -s hatch.yaml taskfiles/front-end.yaml
-      - task: fe:hatch-show-env
+      - task: hatch:update-venv
+      - task: hatch:show-env
 
   switch-to-poetry:
     desc: Switch development to use poetry.
@@ -266,7 +290,7 @@ tasks:
       - poetry config virtualenvs.in-project true
       - poetry lock
       - poetry install
-      - task: fe:poetry-show-env
+      - task: poetry:show-env
 
   switch-to-setuptools:
     desc: Switch development to use setuptools.
@@ -275,7 +299,9 @@ tasks:
       - rm -f taskfiles/front-end.yaml
       - ln -s setuptools.yaml taskfiles/front-end.yaml
       - task: clean
-      - task: fe:setuptools-show-env
+      - task: setuptools:make-env
+      - task: setuptools:update-venv
+      - task: setuptools:show-env
 
   main:
     desc:

@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+version: "3"
+
+vars:
+  DEFAULT_RUNNER: scripts/venv_runner.sh
+  DEV_RUNNER: scripts/venv_runner.sh
+  DOCS_RUNNER: scripts/venv_runner.sh
+  TEST_RUNNER: scripts/venv_runner.sh
+  METRICS_RUNNER: scripts/venv_runner.sh
+  SPHINX_RUNNER: scripts/venv_runner.sh
+
+tasks:
+  make-dist-packages:
+    # [private] build dist packages
+    cmds:
+      - "{{.DEV_RUNNER}} python -m build"
+
+  env-prune:
+    # [private] remove development environment (i.e. virtual environments)
+    cmds:
+      - rm -rf .venv
+
+  show-env:
+    # [private] show this front ends environment
+    cmds:
+      - echo "python venv"
+      - echo "==========="
+      - find .venv -maxdepth 1 -type f ! -name ".*" -exec cat '{}' \;
+    silent: true
+
+  make-env:
+    desc: create virtual environment
+    vars:
+      PYTHON_VERSION:
+        # if the .python-version exists, use the highest version from that file (truncated to Major.Minor), else use "3.12"
+        sh:
+          if test -f .python-version ; then cat .python-version | sort | tail -n
+          1 | sed -u 's/\.[^.]*$//'; else echo "3.12"; fi
+
+    cmds:
+      # virtual environment python does not yet exist, so use a pyenv python
+      - "python{{.PYTHON_VERSION}} -m venv --clear --upgrade-deps .venv/"
+
+    status:
+      # run if the .venv directory does not exist
+      - test -d .venv
+
+  unit-tests:
+    # [private] Run the unit tests for the supported versions of python.
+    cmds:
+      # hatch supports matrix testing for multiple python coverage
+      - "{{.TEST_RUNNER}} pytest tests"
+      - "{{.TEST_RUNNER}} tox"
+
+  update-venv:
+    cmds:
+      - task: make-env
+      # [private] update development virtual environment
+      - "{{.DEFAULT_RUNNER}} pip install --upgrade pip"
+      # install project into virtual environment
+      - "{{.DEFAULT_RUNNER}} pip install -e .[dev,test,docs,metrics]"
