@@ -16,13 +16,6 @@ vars:
   # If you need the virtual environment to calculate a variable, use the vars section of the task
   # that needs the variable.
 
-#  DEFAULT_RUNNER: "{{.fe.DEFAULT_RUNNER}}"
-#  DEV_RUNNER: "{{.fe.DEV_RUNNER}}"
-#  DOCS_RUNNER: "{{.fe.DOCS_RUNNER}}"
-#  TEST_RUNNER: "{{.fe.TEST_RUNNER}}"
-#  METRICS_RUNNER: "{{.fe.METRICS_RUNNER}}"
-#  SPHINX_RUNNER: "{{.fe.SPHINX_RUNNER}}"
-
 tasks:
   default:
     cmds:
