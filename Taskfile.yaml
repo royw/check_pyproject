@@ -32,9 +32,9 @@ tasks:
       - pre-commit run ruff --all-files >/dev/null || true
       - git commit -m "Initial Framework."
       - pre-commit install
-      - task: reuse-enable
-      - task: fe:make-venv
+      - task: fe:make-env
       - task: fe:update-venv
+      - task: reuse-enable
     status:
       # do not run the init task if there is a .git/ directory
       - test -d .git
