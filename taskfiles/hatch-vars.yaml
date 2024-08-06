@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2024 Roy Wright
+#
+# SPDX-License-Identifier: MIT
+
+version: "3"
+
+vars:
+  # Global variables are realized on file load, so cannot assume virtual environment is available.
+  # If you need the virtual environment to calculate a variable, use the vars section of the task
+  # that needs the variable.
+  DEFAULT_RUNNER: "{{.HATCH_RUNNER}}"
+  DEV_RUNNER: "{{.HATCH_DEV_RUNNER}}"
+  DOCS_RUNNER: "{{.HATCH_DOCS_RUNNER}}"
+  TEST_RUNNER: "{{.HATCH_TEST_RUNNER}}"
+  METRICS_RUNNER: "{{.HATCH_METRICS_RUNNER}}"
+  SPHINX_RUNNER: "{{.HATCH_SPHINX_RUNNER}}"
