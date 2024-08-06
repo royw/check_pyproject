@@ -10,11 +10,7 @@ includes:
   hatch: taskfiles/hatch.yaml
   poetry: taskfiles/poetry.yaml
   setuptools: taskfiles/setuptools.yaml
-
-vars:
-  # Global variables are realized on file load, so cannot assume virtual environment is available.
-  # If you need the virtual environment to calculate a variable, use the vars section of the task
-  # that needs the variable.
+  variables: taskfiles/front-end-vars.yaml
 
 tasks:
   default:
@@ -203,6 +199,21 @@ tasks:
     cmds:
       - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject --version"
 
+  pypi_version:
+    desc:
+      Get the current version of the given package(s) from pypi and output as
+      PEP508 dependency specifier(s).
+    summary: |
+      Get the current version of the given package(s) from pypi and output as PEP508 dependency specifier(s).
+      Example usage:
+      ➤ task pypi_version -- httpx tomlkit
+      task: [pypi_version] scripts/latest_pypi_version.sh httpx tomlkit
+      httpx>=0.27.0
+      tomlkit>=0.13.0
+
+    cmds:
+      - "scripts/latest_pypi_version.sh {{.CLI_ARGS}}"
+
   metrics:
     desc: Analyze the code.
     cmds:
@@ -243,6 +254,7 @@ tasks:
   clean:
     desc: Remove virtual environments and generated files.
     cmds:
+      - pre-commit clean
       - task: fe:env-prune
       - rm -rf .tox
       - rm -rf .nox
@@ -268,8 +280,10 @@ tasks:
     cmds:
       - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py hatch"
       - task: clean
-      - rm -f taskfiles/front-end.yaml
+      - rm -f taskfiles/front-end.yaml taskfiles/front-end-vars.yaml
       - ln -s hatch.yaml taskfiles/front-end.yaml
+      - ln -s hatch-vars.yaml taskfiles/front-end-vars.yaml
+      - task: hatch:make-env
       - task: hatch:update-venv
       - task: hatch:show-env
 
@@ -278,19 +292,20 @@ tasks:
     cmds:
       - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py poetry"
       - task: clean
-      - rm -f taskfiles/front-end.yaml
+      - rm -f taskfiles/front-end.yaml taskfiles/front-end-vars.yaml
       - ln -s poetry.yaml taskfiles/front-end.yaml
-      - poetry config virtualenvs.in-project true
-      - poetry lock
-      - poetry install
+      - ln -s poetry-vars.yaml taskfiles/front-end-vars.yaml
+      - task: poetry:make-env
+      - task: poetry:update-venv
       - task: poetry:show-env
 
   switch-to-setuptools:
     desc: Switch development to use setuptools.
     cmds:
       - "{{.DEV_RUNNER}} python3 scripts/swap_build_system.py setuptools"
-      - rm -f taskfiles/front-end.yaml
+      - rm -f taskfiles/front-end.yaml taskfiles/front-end-vars.yaml
       - ln -s setuptools.yaml taskfiles/front-end.yaml
+      - ln -s setuptools-vars.yaml taskfiles/front-end-vars.yaml
       - task: clean
       - task: setuptools:make-env
       - task: setuptools:update-venv
