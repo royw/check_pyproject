@@ -199,7 +199,7 @@ tasks:
     cmds:
       - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject --version"
 
-  pypi_version:
+  pypi-version:
     desc:
       Get the current version of the given package(s) from pypi and output as
       PEP508 dependency specifier(s).
