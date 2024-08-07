@@ -18,14 +18,15 @@ tasks:
       - task --list
 
   make-env:
-    desc: Create virtual environment
+    desc: Create and update virtual environment
     cmds:
-      - fe:make-env
+      - task fe:make-env
+      - task fe:update-env
 
   update-env:
     desc: Update virtual environment
     cmds:
-      - fe:update-env
+      - task fe:update-env
 
   init:
     desc: Initialize new project (only run once upon first creation of project).
@@ -274,6 +275,7 @@ tasks:
       - task: fe:env-prune
       - rm -rf .tox
       - rm -rf .nox
+      - rm -rf build
       - rm -rf dist
       - rm -rf metrics
       - rm -rf site

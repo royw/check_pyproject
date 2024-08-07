@@ -278,11 +278,9 @@ pip-compile-hashes = false
 pip-compile-args = []
 
 [tool.hatch.envs.dev]
-features = []
 scripts.test = "pytest {args}"
 
 [tool.hatch.envs.docs]
-features = []
 scripts.build = "mkdocs build --clean --strict"
 scripts.serve = "mkdocs serve --dev-addr localhost:8000"
 
@@ -290,18 +288,16 @@ scripts.serve = "mkdocs serve --dev-addr localhost:8000"
 #features = ["sphinx"]
 
 [tool.hatch.envs.metrics]
-features = []
 
 [tool.hatch.envs.test]
-features = []
-dependencies = [
-  "coverage[toml]",
-  "pytest",
-  "pytest-cov",
-]
-scripts.test = "pytest {args}"
+#dependencies = [
+#  "coverage[toml]",
+#  "pytest",
+#  "pytest-cov",
+#]
+#scripts.test = "pytest {args}"
 
-[[tool.hatch.envs.test.matrix]]
+[[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11", "3.12"]
 
 ### pytest

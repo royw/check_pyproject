@@ -5,18 +5,18 @@
 version: "3"
 
 vars:
-  DEFAULT_RUNNER: scripts/venv_runner.sh
-  DEV_RUNNER: scripts/venv_runner.sh
-  DOCS_RUNNER: scripts/venv_runner.sh
-  TEST_RUNNER: scripts/venv_runner.sh
-  METRICS_RUNNER: scripts/venv_runner.sh
-  SPHINX_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_DEV_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_DOCS_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_TEST_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_METRICS_RUNNER: scripts/venv_runner.sh
+  SETUPTOOLS_SPHINX_RUNNER: scripts/venv_runner.sh
 
 tasks:
   build:
     # [private] build dist packages
     cmds:
-      - "{{.DEV_RUNNER}} python -m build"
+      - scripts/venv_runner.sh python -m build
 
   env-prune:
     # [private] remove development environment (i.e. virtual environments)
@@ -42,7 +42,7 @@ tasks:
 
     cmds:
       # virtual environment python does not yet exist, so use a pyenv python
-      - "python{{.PYTHON_VERSION}} -m venv --clear --upgrade-deps .venv/"
+      - python3 -m venv --clear --upgrade-deps .venv/
 
     status:
       # run if the .venv directory does not exist
@@ -52,17 +52,17 @@ tasks:
     # [private] Run the unit tests for the supported versions of python.
     cmds:
       # hatch supports matrix testing for multiple python coverage
-      - "{{.TEST_RUNNER}} pytest tests"
-      - "{{.TEST_RUNNER}} tox"
+      - scripts/venv_runner.sh pytest tests
+      - scripts/venv_runner.sh tox
 
   update-env:
     # [private] Update virtual environment
     cmds:
       - task: make-env
       # [private] update development virtual environment
-      - "{{.DEFAULT_RUNNER}} pip install --upgrade pip"
+      - scripts/venv_runner.sh pip install --upgrade pip
       # install project into virtual environment
-      - "{{.DEFAULT_RUNNER}} pip install -e .[dev,test,docs,metrics]"
+      - scripts/venv_runner.sh pip install -e .[dev,test,docs,metrics]
 
   lockfiles-enable:
     # Enable backend to use requirements.txt files managed by pip-compile as lock files.

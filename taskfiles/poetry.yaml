@@ -5,12 +5,12 @@
 version: "3"
 
 vars:
-  DEFAULT_RUNNER: poetry run --
-  DEV_RUNNER: poetry run --
-  DOCS_RUNNER: poetry run --
-  TEST_RUNNER: poetry run --
-  METRICS_RUNNER: poetry run --
-  SPHINX_RUNNER: poetry run --
+  POETRY_RUNNER: poetry run --
+  POETRY_DEV_RUNNER: poetry run --
+  POETRY_DOCS_RUNNER: poetry run --
+  POETRY_TEST_RUNNER: poetry run --
+  POETRY_METRICS_RUNNER: poetry run --
+  POETRY_SPHINX_RUNNER: poetry run --
 
 tasks:
   build:
@@ -39,15 +39,15 @@ tasks:
     # [private] Run the unit tests for the supported versions of python.
     cmds:
       # for poetry, tox is used for multiple python testing
-      - "{{.TEST_RUNNER}} pytest tests"
-      - "{{.TEST_RUNNER}} tox"
+      - poetry run -- pytest tests
+      - poetry run -- tox
 
   update-env:
     # [private] Update virtual environment
     cmds:
       # [private] update development virtual environment
       - poetry update
-      - "{{.DEV_RUNNER}} pip install --upgrade pip"
+      - poetry run -- pip install --upgrade pip
       # install project into virtual environment
       - poetry install
 

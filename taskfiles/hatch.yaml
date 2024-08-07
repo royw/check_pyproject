@@ -5,12 +5,12 @@
 version: "3"
 
 vars:
-  DEFAULT_RUNNER: hatch run --
-  DEV_RUNNER: hatch -e dev run --
-  DOCS_RUNNER: hatch -e docs run --
-  TEST_RUNNER: hatch -e test --
-  METRICS_RUNNER: hatch -e metrics run --
-  SPHINX_RUNNER: hatch -e sphinx run --
+  HATCH_RUNNER: hatch run --
+  HATCH_DEV_RUNNER: hatch -e dev run --
+  HATCH_DOCS_RUNNER: hatch -e docs run --
+  HATCH_TEST_RUNNER: hatch -e test --
+  HATCH_METRICS_RUNNER: hatch -e metrics run --
+  HATCH_SPHINX_RUNNER: hatch -e sphinx run --
 
 tasks:
   build:
@@ -33,8 +33,8 @@ tasks:
     vars:
       REQUIRES_PYTHON:
         sh:
-          "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml
-          project.requires-python"
+          hatch -e dev run -- toml get --toml-path pyproject.toml
+          project.requires-python
     cmds:
       - echo "Creating virtualenv in .venv"
       - hatch env show
@@ -44,28 +44,29 @@ tasks:
     # [private] Run the unit tests for the supported versions of python.
     cmds:
       # hatch supports matrix testing for multiple python coverage
-      - hatch -- test
+      - hatch -- test --show
+      - hatch -- test --all
 
   update-env:
     # [private] Update virtual environment
     cmds:
       # [private] update development virtual environment
-      - "{{.DEV_RUNNER}} pip install --upgrade pip"
+      - hatch -e dev run -- pip install --upgrade pip
       # install project into virtual environment
-      - "{{.DEV_RUNNER}} pip install -e .[dev,test,docs,metrics]"
+      - hatch -e dev run -- pip install -e .[dev,test,docs,metrics]
 
   lockfiles-enable:
     # Enable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
-      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
-        tool.hatch.env.requires --to-array "[\"hatch-pip-compile\"]"'
-      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
-        tool.hatch.envs.default.type "pip-compile"'
+      - hatch -e dev run -- toml set --toml-path pyproject.toml
+        tool.hatch.env.requires --to-array "[\"hatch-pip-compile\"]"
+      - hatch -e dev run -- toml set --toml-path pyproject.toml
+        tool.hatch.envs.default.type "pip-compile"
 
   lockfiles-disable:
     # [private] Disable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
-      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
-        tool.hatch.env.requires --to-array "[]"'
-      - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
-        tool.hatch.envs.default.type "virtual"'
+      - hatch -e dev run -- toml set --toml-path pyproject.toml
+        tool.hatch.env.requires --to-array "[]"
+      - hatch -e dev run -- toml set --toml-path pyproject.toml
+        tool.hatch.envs.default.type "virtual"
