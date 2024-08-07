@@ -5,6 +5,10 @@
 # ref: https://packaging.python.org/en/latest/specifications/pyproject-toml
 
 [build-system]
+# defaults to using Hatch.
+# Run "task switch-to-poetry" or "task switch-to-setuptools" to change as
+# taskfiles/front-end*.yaml symbolic links need to be kept in sync with
+# these values.
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
@@ -646,6 +650,55 @@ myst-parser = "^3.0.1"
 sphinx = "^7.3.7"
 sphinx-copybutton = "^0.5.2"
 sphinx-autodoc-typehints = "^2.1.1"
+
+[tool.poetry.extras]
+dev = [
+  "blacken-docs",
+  "build",
+  "fawltydeps",
+  "flict",
+  "liccheck",
+  "mypy",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "pyupgrade",
+  "reuse",
+  "ruff",
+  "shellcheck-py",
+  "toml-cli",
+  "tomlkit",
+  "tox",
+  "validate-pyproject",
+  "httpx",
+  "pip-tools",
+  "check-pyproject"
+]
+test = [
+  "coverage",
+  "pytest",
+  "pytest-cov",
+  "tomlkit"
+]
+metrics = [
+  "radon"
+]
+docs = [
+  "mkdocs",
+  "mkdocstrings-python",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-material",
+  "mkdocs-section-index",
+  "mkdocstrings"
+]
+sphinx = [
+  "furo",
+  "myst-parser",
+  "sphinx",
+  "sphinx-copybutton",
+  "sphinx-autodoc-typehints"
+]
 
 [tool.poetry.scripts]
 check_pyproject = "check_pyproject.__main__:main"
