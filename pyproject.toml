@@ -118,9 +118,9 @@ scripts = {'check_pyproject' = "check_pyproject.__main__:main"}
 dependencies = [
   "loguru>=0.7.2, <0.8.0",
   "pathvalidate<4.0.0,>=3.2.0",
-  "packaging>=24.0.0, <25.0.0",
   "tomlkit<0.13.0,>=0.12.5",
-]
+  "packaging>=24.0.0, <25.0.0",
+  ]
 
 # TOML type: a table with values of arrays of PEP 508 strings (optional-dependencies)
 # For optional-dependencies, it is a table where each key specifies an extra and whose value is an array of
