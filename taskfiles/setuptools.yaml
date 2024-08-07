@@ -13,7 +13,7 @@ vars:
   SPHINX_RUNNER: scripts/venv_runner.sh
 
 tasks:
-  make-dist-packages:
+  build:
     # [private] build dist packages
     cmds:
       - "{{.DEV_RUNNER}} python -m build"
@@ -32,7 +32,7 @@ tasks:
     silent: true
 
   make-env:
-    desc: create virtual environment
+    # create virtual environment
     vars:
       PYTHON_VERSION:
         # if the .python-version exists, use the highest version from that file (truncated to Major.Minor), else use "3.12"
@@ -48,17 +48,28 @@ tasks:
       # run if the .venv directory does not exist
       - test -d .venv
 
-  unit-tests:
+  unit-test:
     # [private] Run the unit tests for the supported versions of python.
     cmds:
       # hatch supports matrix testing for multiple python coverage
       - "{{.TEST_RUNNER}} pytest tests"
       - "{{.TEST_RUNNER}} tox"
 
-  update-venv:
+  update-env:
+    # [private] Update virtual environment
     cmds:
       - task: make-env
       # [private] update development virtual environment
       - "{{.DEFAULT_RUNNER}} pip install --upgrade pip"
       # install project into virtual environment
       - "{{.DEFAULT_RUNNER}} pip install -e .[dev,test,docs,metrics]"
+
+  lockfiles-enable:
+    # Enable backend to use requirements.txt files managed by pip-compile as lock files.
+    cmds:
+      - echo "Not implemented"
+
+  lockfiles-disable:
+    # [private] Disable backend to use requirements.txt files managed by pip-compile as lock files.
+    cmds:
+      - echo "Not implemented"

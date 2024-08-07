@@ -8,12 +8,12 @@ vars:
   DEFAULT_RUNNER: hatch run --
   DEV_RUNNER: hatch -e dev run --
   DOCS_RUNNER: hatch -e docs run --
-  TEST_RUNNER: hatch -e test run --
+  TEST_RUNNER: hatch -e test --
   METRICS_RUNNER: hatch -e metrics run --
   SPHINX_RUNNER: hatch -e sphinx run --
 
 tasks:
-  make-dist-packages:
+  build:
     # [private] build dist packages
     cmds:
       - hatch -e dev build
@@ -24,7 +24,7 @@ tasks:
       - hatch env prune
 
   make-env:
-    desc: create virtual environment
+    # [private] create virtual environment
     cmds:
       - hatch -e dev env create
 
@@ -40,33 +40,30 @@ tasks:
       - hatch env show
       - echo "Requires python {{.REQUIRES_PYTHON}}"
 
-  unit-tests:
+  unit-test:
     # [private] Run the unit tests for the supported versions of python.
     cmds:
       # hatch supports matrix testing for multiple python coverage
-      - "{{.TEST_RUNNER}} test"
+      - hatch -- test
 
-  update-venv:
+  update-env:
+    # [private] Update virtual environment
     cmds:
       # [private] update development virtual environment
       - "{{.DEV_RUNNER}} pip install --upgrade pip"
       # install project into virtual environment
       - "{{.DEV_RUNNER}} pip install -e .[dev,test,docs,metrics]"
 
-  hatch-lockfiles-enable:
-    desc:
-      Enable hatch backend to use requirements.txt files managed by pip-compile
-      as lock files.
+  lockfiles-enable:
+    # Enable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
       - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
         tool.hatch.env.requires --to-array "[\"hatch-pip-compile\"]"'
       - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
         tool.hatch.envs.default.type "pip-compile"'
 
-  hatch-lockfiles-disable:
-    desc:
-      Disable hatch backend to use requirements.txt files managed by pip-compile
-      as lock files.
+  lockfiles-disable:
+    # [private] Disable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
       - '{{.DEV_RUNNER}} toml set --toml-path pyproject.toml
         tool.hatch.env.requires --to-array "[]"'

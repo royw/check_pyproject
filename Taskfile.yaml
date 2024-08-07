@@ -17,8 +17,18 @@ tasks:
     cmds:
       - task --list
 
+  make-env:
+    desc: Create virtual environment
+    cmds:
+      - fe:make-env
+
+  update-env:
+    desc: Update virtual environment
+    cmds:
+      - fe:update-env
+
   init:
-    desc: initialize new project (only run once upon first creation of project).
+    desc: Initialize new project (only run once upon first creation of project).
     cmds:
       - git init .
       - git add docs LICENSES scripts src tests .gitignore
@@ -33,7 +43,7 @@ tasks:
       - git commit -m "Initial Framework."
       - pre-commit install
       - task: fe:make-env
-      - task: fe:update-venv
+      - task: fe:update-env
       - task: reuse-enable
     status:
       # do not run the init task if there is a .git/ directory
@@ -120,6 +130,7 @@ tasks:
       - task: check-reuse
 
   check-reuse:
+    desc: Check if project is REUSE compliant.
     vars:
       REUSE_ENABLED:
         sh:
@@ -158,8 +169,13 @@ tasks:
 
   build:
     desc: Build the project.
+    cmds:
+      - task fe:build
+
+  make:
+    desc: Make the project (format, lint, check, build, metrics, docs).
     summary: |
-      Build the project
+      Make the project
 
       Format the project, check for code quality, check for compliance,
       perform unit testing, build distributables, build documentation,
@@ -174,9 +190,9 @@ tasks:
       # check that code can be committed to vcs
       - task: execute-pre-commit
       # create dist packages
-      - task: fe:make-dist-packages
+      - task: fe:build
       # install current build into dev virtual environment
-      - task: fe:update-venv
+      - task: fe:update-env
       # check licenses
       - task: check-licenses
       # run unit test and generate coverage reports
@@ -188,11 +204,11 @@ tasks:
       # actually run the built application, getting its version
       - task: version
 
-  tests:
+  test:
     desc: Run the unit tests for the supported versions of python.
     cmds:
       # hatch supports matrix testing for multiple python coverage
-      - task: unit-tests
+      - task: fe:unit-test
 
   version:
     desc: Run the project, having it return its version.
@@ -232,7 +248,7 @@ tasks:
   coverage:
     desc: Run the unit tests with coverage.
     cmds:
-      - "{{.TEST_RUNNER}} pytest --cov-report term-missing --cov-report
+      - "{{.DEV_RUNNER}} pytest --cov-report term-missing --cov-report
         json:metrics/coverage.json --cov=./ tests"
 
   docs:
@@ -284,7 +300,7 @@ tasks:
       - ln -s hatch.yaml taskfiles/front-end.yaml
       - ln -s hatch-vars.yaml taskfiles/front-end-vars.yaml
       - task: hatch:make-env
-      - task: hatch:update-venv
+      - task: hatch:update-env
       - task: hatch:show-env
 
   switch-to-poetry:
@@ -296,7 +312,7 @@ tasks:
       - ln -s poetry.yaml taskfiles/front-end.yaml
       - ln -s poetry-vars.yaml taskfiles/front-end-vars.yaml
       - task: poetry:make-env
-      - task: poetry:update-venv
+      - task: poetry:update-env
       - task: poetry:show-env
 
   switch-to-setuptools:
@@ -308,8 +324,22 @@ tasks:
       - ln -s setuptools-vars.yaml taskfiles/front-end-vars.yaml
       - task: clean
       - task: setuptools:make-env
-      - task: setuptools:update-venv
+      - task: setuptools:update-env
       - task: setuptools:show-env
+
+  lockfiles-disable:
+    desc:
+      Disable backend to use requirements.txt files managed by pip-compile as
+      lock files.
+    cmds:
+      - fe:lockfiles-disable
+
+  lockfiles-enable:
+    desc:
+      Enable backend to use requirements.txt files managed by pip-compile as
+      lock files.
+    cmds:
+      - fe:lockfiles-enable
 
   main:
     desc:
