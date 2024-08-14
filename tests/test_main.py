@@ -30,7 +30,7 @@ def test_main_bad_pyproject() -> None:
 def test_main_version(capsys: CaptureFixture[Any]) -> None:
     assert main(["--version"]) == 0
     captured = capsys.readouterr()
-    assert version("check_pyproject") in captured.err
+    assert version("check_pyproject") in captured.out
 
 
 def test_main_longhelp() -> None:
@@ -49,14 +49,14 @@ def test_main_help(capsys: CaptureFixture[Any]) -> None:
 
 
 def test_quiet(capsys: CaptureFixture[Any]) -> None:
-    assert main(["--quiet", "--config", str(tests_dir / "config_2.toml")]) == 0
+    assert main(["--quiet", "--config", str(tests_dir / "config_2.toml"), str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert captured.err == ""
+    assert captured.out == ""
 
 
 def test_invalid_loglevel(capsys: CaptureFixture[Any]) -> None:
     with pytest.raises(SystemExit):
-        main(["--loglevel", "1", "--config", str(tests_dir / "config_2.toml")])
+        main(["--loglevel", "1", "--config", str(tests_dir / "config_2.toml"), str(tests_dir / "good_pyproject.toml")])
     captured = capsys.readouterr()
     assert "error: argument --loglevel:" in captured.err
 
@@ -74,56 +74,56 @@ def test_load_config_file_debug(capsys: CaptureFixture[Any]) -> None:
     # with debug=true
     assert main(["--config", str(tests_dir / "config_1.toml"), str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" in captured.err
+    assert "project_requirements" in captured.out
 
 
 def test_load_config_file_not_debug(capsys: CaptureFixture[Any]) -> None:
     # with debug=false
     assert main(["--config", str(tests_dir / "config_2.toml"), str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" not in captured.err
+    assert "project_requirements" not in captured.out
 
 
 def test_load_config_file_loglevel_debug(capsys: CaptureFixture[Any]) -> None:
     # with loglevel=DEBUG
     assert main(["--config", str(tests_dir / "config_3.toml"), str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" in captured.err
+    assert "project_requirements" in captured.out
 
 
 def test_load_config_file_loglevel_info(capsys: CaptureFixture[Any]) -> None:
     # with loglevel=INFO
     assert main(["--config", str(tests_dir / "config_4.toml"), str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" not in captured.err
+    assert "project_requirements" not in captured.out
 
 
 def test_debug_flags(capsys: CaptureFixture[Any]) -> None:
     # with debug=true
     assert main(["--debug", str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" in captured.err
+    assert "project_requirements" in captured.out
 
 
 def test_debug_flags_false(capsys: CaptureFixture[Any]) -> None:
     # with debug=false
     assert main([str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" not in captured.err
+    assert "project_requirements" not in captured.out
 
 
 def test_debug_flags_debug(capsys: CaptureFixture[Any]) -> None:
     # with --loglevel DEBUG
     assert main(["--loglevel", "DEBUG", str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" in captured.err
+    assert "project_requirements" in captured.out
 
 
 def test_debug_flags_info(capsys: CaptureFixture[Any]) -> None:
     # with --loglevel INFO
     assert main(["--loglevel", "INFO", str(tests_dir / "good_pyproject.toml")]) == 0
     captured = capsys.readouterr()
-    assert "project_requirements" not in captured.err
+    assert "project_requirements" not in captured.out
 
 
 def test_save_config_file_as() -> None:

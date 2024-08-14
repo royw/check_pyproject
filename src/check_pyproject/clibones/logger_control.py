@@ -101,7 +101,7 @@ class LoggerControl:
 
         settings.loglevel = level
         logger.remove(None)
-        logger.add(sys.stderr, level=settings.loglevel, format=LOGURU_SHORT_FORMAT)
+        logger.add(sys.stdout, level=settings.loglevel, format=LOGURU_SHORT_FORMAT)
 
         if settings_dict.get("logfile"):
             filename = settings_dict["logfile"]

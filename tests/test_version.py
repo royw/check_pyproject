@@ -60,4 +60,4 @@ def test_cli_versions_are_in_sync(capsys: CaptureFixture[Any]) -> None:
     with pyproject() as data:
         assert main(["--version"]) == 0
         captured = capsys.readouterr()
-        assert data["project"]["version"] in captured.err
+        assert data["project"]["version"] in captured.out

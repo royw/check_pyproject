@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import importlib
 from dataclasses import dataclass
-from importlib.metadata import version
+from importlib import metadata
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -64,8 +64,8 @@ class InfoControl:
         """
         if self.app_package:
             try:
-                return version(self.app_package)
-            except ImportError:
+                return metadata.version(self.app_package)
+            except (ImportError, importlib.metadata.PackageNotFoundError):
                 logger.warning(f"Could not get metadata for {self.app_package}")
                 try:
                     return str(__import__(self.app_package).version)
