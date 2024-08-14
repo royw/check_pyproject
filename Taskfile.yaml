@@ -360,9 +360,21 @@ tasks:
     cmds:
       - task fe:publish-pypi
 
-  main:
+  main-module:
     desc:
       "Run the __main__ module code, passing arguments to the module.  Example:
       task main -- --version"
+    vars:
+      APP_NAME:
+        sh: "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.name"
     cmds:
-      - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject {{.CLI_ARGS}}"
+      - "{{.DEFAULT_RUNNER}} python3 -m {{.APP_NAME}} {{.CLI_ARGS}}"
+
+  main:
+    desc:
+      "Run the application's script in the virtual environment's bin directory."
+    vars:
+      APP_NAME:
+        sh: "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.name"
+    cmds:
+      - "{{.DEFAULT_RUNNER}} {{.APP_NAME}} {{.CLI_ARGS}}"
