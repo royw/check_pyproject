@@ -135,6 +135,7 @@ dependencies = [
 dev = [
   "blacken-docs<2.0.0,>=1.18.0",
   "build<2.0.0,>=1.2.1",
+  "bump2version<2.0.0,>=1.0.1",
   "fawltydeps>=0.15.0,<0.16.0",
   "flict<2.0.0,>=1.2.14",
   "httpx<0.28.0,>=0.27.0",
@@ -619,6 +620,7 @@ tox = "^4.14.2"
 validate-pyproject = "^0.18"
 httpx = "^0.27.0"
 pip-tools = "^7.4.1"
+bump2version = "^1.0.1"
 
 [tool.poetry.group.test.dependencies]
 coverage = {extras = ["toml"], version = "^7.5.4"}
@@ -651,6 +653,7 @@ sphinx-autodoc-typehints = "^2.1.1"
 dev = [
   "blacken-docs",
   "build",
+  "bump2version",
   "fawltydeps",
   "flict",
   "liccheck",
