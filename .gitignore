@@ -8,12 +8,14 @@ metrics/
 site/
 .tox/
 .nox/
+.reuse/
 .coverage
 **/__pycache__/*.pyc
 reuse.spdx
 **/*_cache/
 **/.cache/
 tests/*.lastrun
-taskfiles/front-end.yaml
+taskfiles/front-end*.yaml
 **/requirements*.txt*
 src/*.egg-info
+REUSE.toml

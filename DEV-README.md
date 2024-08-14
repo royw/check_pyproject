@@ -21,7 +21,6 @@ can hope for is preparing you for the start of this voyage! ;-)
   - [Development Environment Requirements](#development-environment-requirements)
   - [20,000 meter view](#20000-meter-view)
     - [Task](#task)
-    - [Taskfile\*.yml](#taskfileyml)
   - [Under the hood](#under-the-hood) _ [Top level tables](#top-level-tables) _
   [check_pyproject](#check_pyproject) _
   [virtual environments](#virtual-environments) _ [src/ layout](#src-layout) _
@@ -35,9 +34,7 @@ can hope for is preparing you for the start of this voyage! ;-)
 When the muse strikes, and it's time to create a new CLI application, I don't
 want to spend time setting up the development environment. I just want to jump
 into the new project. The current incarnation of my quick start, is a
-cookiecutter template, cookiecutter-clibones. Since it had been a few years,
-clibones is mostly new, with an updated ApplicationSettings base class (more
-later).
+cookiecutter template, cookiecutter-clibones.
 
 ### In the beginning
 
@@ -69,16 +66,21 @@ like [hatch](https://hatch.pypa.io/),
 [flit](https://packaging.python.org/en/latest/key_projects/#flit). Even
 [Setuptools](https://setuptools.pypa.io/) is staying in the race.
 
-So I decided this development environment will support both Poetry and Hatch.
+So I decided this development environment will support Poetry, Hatch, and
+Setuptools.
 
 Poetry is opinionated, uses non-standard revision syntax, and is a little dated
 on its `pyproject.toml` usage (most settings - at least until poetry version 2
-is released, are in `tool.poetry` table).
+is released, are in the `tool.poetry` table).
 
 Hatch is hard core standards based, even if they have to wait for the standard
 to be adopted. Should be interesting...
 
-One more detail, I'm very much old school. The proper way to build a project is:
+Setuptools, is, well, setuptools. The current "old school" approach (ok, I
+remember when they were new...).
+
+One more detail, I'm very much old school (ok, before python existed). The
+proper way to build a project is:
 
     config
     make
@@ -101,6 +103,7 @@ Support:
 - [Task](https://taskfile.dev/)
 - [Poetry](https://python-poetry.org/)
 - [Hatch](https://hatch.pypa.io/)
+- [Setuptools](https://setuptools.pypa.io/)
 - [PyCharm](https://www.jetbrains.com/pycharm/)
 - [MkDocs](https://www.mkdocs.org/)
 - [pytest](https://docs.pytest.org)
@@ -124,28 +127,35 @@ Let's start with just running task:
     ➤ task
     task: [default] task --list
     task: Available tasks for this project:
-    * build:                  Build the project.
-    * build-docs:             Build the documentation.
-    * check-licenses:         Check that all dependency licenses are acceptable for this project.
-    * check-pyproject:        Check the consistency between poetry and hatch in the pyproject.toml file.
-    * clean:                  Remove virtual environments and generated files.
-    * coverage:               Run the unit tests with coverage.
-    * docs:                   Create the project documentation and open in the browser.
-    * format:                 Check and reformat the code to a coding standard.
-    * init:                   initialize new project (only run once upon first creation of project).
-    * lint:                   Perform static code analysis.
-    * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
-    * metrics:                Analyze the code.
-    * pre-commit:             Must pass before allowing version control commit.
-    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
-    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
-    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
-    * serve-docs:             Start the documentation server and open browser at localhost:8000.
-    * switch-to-hatch:        Switch development to use hatch instead of poetry.
-    * switch-to-poetry:       Switch development to use poetry instead of hatch.
-    * switch-to-setuptools:   Switch development to use setuptools.
-    * tests:                  Run the unit tests for the supported versions of python.
-    * version:                Run the project, having it return its version.
+    * build:                      Build the project.
+    * build-docs:                 Build the documentation.
+    * check-licenses:             Check that all dependency licenses are acceptable for this project.
+    * check-pyproject:            Check the consistency between poetry and hatch in the pyproject.toml file.
+    * check-reuse:                Check if project is REUSE compliant.
+    * clean:                      Remove virtual environments and generated files.
+    * coverage:                   Run the unit tests with coverage.
+    * docs:                       Create the project documentation and open in the browser.
+    * format:                     Check and reformat the code to a coding standard.
+    * init:                       Initialize new project (only run once upon first creation of project).
+    * lint:                       Perform static code analysis.
+    * lockfiles-disable:          Disable backend to use requirements.txt files managed by pip-compile as lock files.
+    * lockfiles-enable:           Enable backend to use requirements.txt files managed by pip-compile as lock files.
+    * main:                       Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * make:                       Make the project (format, lint, check, build, metrics, docs).
+    * make-env:                   Create and update virtual environment
+    * metrics:                    Analyze the code.
+    * pre-commit:                 Must pass before allowing version control commit.
+    * pypi-version:               Get the current version of the given package(s) from pypi and output as PEP508 dependency specifier(s).
+    * reuse-disable:              Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:               Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:                 Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
+    * serve-docs:                 Start the documentation server and open browser at localhost:8000.
+    * switch-to-hatch:            Switch development to use hatch.
+    * switch-to-poetry:           Switch development to use poetry.
+    * switch-to-setuptools:       Switch development to use setuptools.
+    * test:                       Run the unit tests for the supported versions of python.
+    * update-env:                 Update virtual environment
+    * version:                    Run the project, having it return its version.
 
 Cool, so looking over the list I'd guess the first thing I ought to do after
 creating the project using cookiecutter is to initialize it:
@@ -154,7 +164,7 @@ creating the project using cookiecutter is to initialize it:
 
 then let's just go for broke and:
 
-    ➤ task build
+    ➤ task make
 
 Seriously, to start a new project:
 
@@ -162,11 +172,11 @@ Seriously, to start a new project:
 2. cd {your-project-name}
 3. task init
 4. task build
-5. optionally: task switch-to-hatch
+5. optionally: task switch-to-setuptools
 6. ...
 
-Now the build task is the main rinse and repeat task, i.e., build it, correct
-errors, build it,...
+Now the make task is the main rinse and repeat task, i.e., make it, correct
+errors, make it,...
 
 But say I prefer hatch, it is easy to switch:
 
@@ -186,42 +196,102 @@ Note, the editing of the pyproject.toml file to support the switch tasks is in
 So now the project is building clean, whoooop! Before proceeding, let's take a
 look at what the build task does:
 
-    ➤ task build --summary
-    task: build
+    ➤ task make --summary
+    task: make
 
-    Build the project
+    Make the project
 
     Format the project, check for code quality, check for compliance,
     perform unit testing, build distributables, build documentation,
     and run the application to display its version.
 
     commands:
-     - Task: show-env
+     - Task: fe:show-env
      - Task: format
      - Task: lint
-     - pre-commit run --all-files
-     - hatch -e dev build
-     - Task: update-venv
+     - Task: execute-pre-commit
+     - Task: fe:build
+     - Task: fe:update-env
      - Task: check-licenses
      - Task: coverage
      - Task: metrics
      - Task: build-docs
      - Task: version
 
-Let's remove the switch tasks discussed above and the tasks ran by build from
-the available task list:
+Yes, I like my make to do a lot. Feel free to change to your preferences.
 
-    * check-pyproject:        Check the consistency between poetry and hatch in the pyproject.toml file.
-    * clean:                  Remove virtual environments and generated files.
-    * coverage:               Run the unit tests with coverage.
-    * docs:                   Create the project documentation and open in the browser.
-    * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
-    * pre-commit:             Must pass before allowing version control commit.
-    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
-    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
-    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
-    * serve-docs:             Start the documentation server and open browser at localhost:8000.
-    * tests:                  Run the unit tests for the supported versions of python.
+Real quick
+
+- `fe:show-env` just prints info about your virtual environment.
+- `format` formats your code using ruff and blacken-docs.
+- `lint` checks your code for problems.
+- `execute-pre-commit` this is the task that pre-commit calls, so doing here too
+  reduces blocked commits...
+- `fe:build` builds your project using the current front end.
+- `fe:update-env` updates your virtual environment. Necessary to make current
+  pyproject.toml values available to metadata.
+- `check-licenses` useful when using REUSE to catch new files without
+  copyright/license header.
+- `coverage` runs pytest with coverage with the python specified in
+  pyproject.toml.
+- `metrics` here's another you may want to customize.
+- `build-docs` generates project documentation into `site/`. To view, run
+  `task serve-docs` or `task docs`.
+- `version` runs your program with a `--version` option. This is a smoke test of
+  your program.
+
+Currently `execute-commit` just calls `check-pyproject`.
+
+Taking a look at the docs task:
+
+    ➤ task docs --summary
+    task: docs
+
+    Create the project documentation and open in the browser.
+
+    commands:
+     - Task: build-docs
+     - Task: serve-docs
+
+Note that build-docs is included in the make task, so you might want to just run
+`task serve-docs` and examine your documentation. Now if you were in a
+documentation editing phase, then the `task docs` would both build and show the
+built documentation.
+
+Note: "fe:" prefix stands for "front-end". When you switch development systems
+some taskfiles are symbolically linked to `taskfiles/front-end.yaml` and
+`taskfiles/front-end-vars.yaml` which contain development system specific tasks
+and variables:
+
+    ➤ ls -l taskfiles
+    total 24
+    lrwxrwxrwx 1 royw royw   15 Aug  7 22:00 front-end-vars.yaml -> hatch-vars.yaml
+    lrwxrwxrwx 1 royw royw   10 Aug  7 22:00 front-end.yaml -> hatch.yaml
+    -rw-rw-r-- 1 royw royw  568 Aug  7 22:00 hatch-vars.yaml
+    -rw-rw-r-- 1 royw royw 2226 Aug  7 22:00 hatch.yaml
+    -rw-rw-r-- 1 royw royw  574 Aug  7 22:00 poetry-vars.yaml
+    -rw-rw-r-- 1 royw royw 1561 Aug  7 22:00 poetry.yaml
+    -rw-rw-r-- 1 royw royw  598 Aug  7 22:00 setuptools-vars.yaml
+    -rw-rw-r-- 1 royw royw 2294 Aug  7 22:00 setuptools.yaml
+
+The main `Taskfile.yaml` loads the `front-end*.yaml` files into the "fe:"
+namespace. You will probably very seldom, if ever, run "fe:" tasks directly.
+Look at the `switch-to-*` tasks if you want to see how this works.
+
+Let's remove the init, switch, make, and make sub-tasks discussed above from the
+available task list:
+
+    * check-reuse:                Check if project is REUSE compliant.
+    * clean:                      Remove virtual environments and generated files.
+    * lockfiles-disable:          Disable backend to use requirements.txt files managed by pip-compile as lock files.
+    * lockfiles-enable:           Enable backend to use requirements.txt files managed by pip-compile as lock files.
+    * main:                       Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * make-env:                   Create and update virtual environment
+    * pypi-version:               Get the current version of the given package(s) from pypi and output as PEP508 dependency specifier(s).
+    * reuse-disable:              Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:               Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:                 Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
+    * test:                       Run the unit tests for the supported versions of python.
 
 and look at pre-commit task which is invoked in .pre-commit-config.yaml when ran
 by pre-commit in the build task.
@@ -234,9 +304,25 @@ by pre-commit in the build task.
     commands:
      - Task: check-pyproject
 
-Both the tests and coverage tasks run pytest for each of the supported python
-versions. The difference is for the coverage task, coverage generating options
-are passed to pytest while for the tests task, they are not.
+The `test` task runs pytest for each of the supported python versions while the
+`coverage` task uses the supported python version from the pyproject.toml file.
+
+    ➤ task test --summary
+    task: test
+
+    Run the unit tests for the supported versions of python.
+
+    commands:
+     - Task: fe:unit-test
+
+    ➤ task fe:unit-test --summary
+    task: fe:unit-test
+
+    (task does not have description or summary)
+
+    commands:
+     - hatch -- test --show
+     - hatch -- test --all
 
     ➤ task coverage --summary
     task: coverage
@@ -246,27 +332,25 @@ are passed to pytest while for the tests task, they are not.
     commands:
      - hatch run -- test:pytest --cov-report term-missing --cov-report json:metrics/coverage.json --cov=foobar tests
 
-    ➤ task tests --summary
-    task: tests
+Pytest and Coverage have configuration options in `pyproject.toml`
+(`tool.pytest` and `tool.coverage` tables).
 
-    Run the unit tests for the supported versions of python.
+Removing the `test` and `pre-commit` tasks from the available task list:
 
-    commands:
-     - hatch run -- test:test
+    * check-reuse:                Check if project is REUSE compliant.
+    * clean:                      Remove virtual environments and generated files.
+    * lockfiles-disable:          Disable backend to use requirements.txt files managed by pip-compile as lock files.
+    * lockfiles-enable:           Enable backend to use requirements.txt files managed by pip-compile as lock files.
+    * main:                       Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * make-env:                   Create and update virtual environment
+    * pypi-version:               Get the current version of the given package(s) from pypi and output as PEP508 dependency specifier(s).
+    * reuse-disable:              Disable using SPDX reuse for enforcing copyright and license.
+    * reuse-enable:               Enable using SPDX reuse for enforcing copyright and license.
+    * reuse-lint:                 Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
 
-Removing the tests, coverage, and pre-commit tasks from the available task list:
-
-    * clean:                  Remove virtual environments and generated files.
-    * docs:                   Create the project documentation and open in the browser.
-    * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
-    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
-    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
-    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
-    * serve-docs:             Start the documentation server and open browser at localhost:8000.
-
-The clean task is pretty self-evident. If you want a totally clean environment,
-then running clean followed by a switch-to-\_ task or the build task will do the
-job:
+The `clean` task is pretty self-evident. If you want a totally clean
+environment, then running clean followed by a `switch-to-*` task or the `make`
+task will do the job:
 
     ➤ task clean
     ➤ task switch-to-poetry
@@ -274,53 +358,69 @@ job:
 or
 
     ➤ task clean
-    ➤ task build
+    ➤ task make
 
-Now take a look at the docs task:
+or
 
-    ➤ task docs --summary
-    task: docs
+    ➤ task clean
+    ➤ task make-env
+    ➤ task update-env
 
-    Create the project documentation and open in the browser.
-
-    commands:
-     - Task: build-docs
-     - Task: serve-docs
-
-Note that build-docs is included in the build task, so you might want to just
-run `task serve-docs` and examine your documentation. Now if you were in a
-documentation editing phase, then the `task docs` would both build and show the
-built documentation.
-
-Now we are down to
-
-    * main:                   Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
-    * reuse-disable:          Disable using SPDX reuse for enforcing copyright and license.
-    * reuse-enable:           Enable using SPDX reuse for enforcing copyright and license.
-    * reuse-lint:             Perform reuse checks if pyproject.toml: tools.taskfile.reuse is set to "enabled"
+The `make-env` creates the virtual environment while `update-env` pip installs
+your project into the virtual environment.
 
 The reuse tasks support using the SPDX reuse system. You may enable or disable
 using the system. The `reuse-lint` task is usually called by the `lint` task and
 just conditionally runs "reuse lint" if reuse is enabled in the pyproject.toml
-file's `tool.taskfile` table.
+file's `tool.taskfile` table. If you do not want reuse, you might want to remove
+it from the `.pre-commit-config.yaml` file.
+
+Now we are down to
+
+    * lockfiles-disable:          Disable backend to use requirements.txt files managed by pip-compile as lock files.
+    * lockfiles-enable:           Enable backend to use requirements.txt files managed by pip-compile as lock files.
+    * main:                       Run the __main__ module code, passing arguments to the module.  Example: task main -- --version
+    * pypi-version:               Get the current version of the given package(s) from pypi and output as PEP508 dependency specifier(s).
+
+`pypi-version` simply queries pypi.org for the latest version of a package:
+
+    ➤ task pypi-version -- requests
+    task: [pypi-version] scripts/latest_pypi_version.sh requests
+    requests>=2.32.3
+
+The output is a version specifier that can be copied into
+`project.dependencies`. Not as nice as poetry's `add` command.
+
+`lockfiles-*` or used by hatch and setuptools to enable/disable using
+pip-compile to resolve dependencies.
 
 And that leaves us with the main task, which is just a shortcut for running the
 project in the project manager's virtual environment. Try it:
 
     ➤ task main -- --help
 
-### Taskfile\*.yml
+Note, you do need the "--" after the task name.
 
-Last topic on task, there are three task files:
+### Summary
 
-    ➤ ls -l taskfile*
-    -rw-rw-r-- 1 royw royw 5895 Jul 11 13:14 Taskfile-hatch.yml
-    -rw-rw-r-- 1 royw royw 5333 Jul 11 12:19 Taskfile-poetry.yml
-    lrwxrwxrwx 1 royw royw   18 Jul 10 14:12 Taskfile.yml -> Taskfile-hatch.yml
+Yes, there are more tasks than I like. In real use, you usually settle on one
+development system and once settled in, your workflow should be something like:
 
-If you compare `Taskfile-hatch.yml` and `Taskfile-poetry.yml` you will notice
-they are pretty similar, just using the appropriate hatch or poetry commands.
-The symbolically linked `Taskfile.yml` is set with the `switch-to-*` tasks.
+    edit
+    task make
+    ...
+    edit
+    task make
+    task test
+
+    task doc
+    ...
+    edit
+    task doc
+
+    git add
+    git commit
+    git push
 
 ## Under the hood
 
@@ -375,9 +475,10 @@ table.
 
 ### virtual environments
 
-Both poetry and hatch make use of virtual environments. To enable both poetry
-and hatch to share the same virtual environment and to share the same virtual
-environment with PyCharm, the project's .venv/ virtual environment is used.
+Both poetry and hatch make use of virtual environments. For Setuptools, a
+virtual environment is recommended, so we use one. To enable all development
+systems to share the same virtual environment and to share the same virtual
+environment with PyCharm, the project's `.venv/` virtual environment is used.
 
 For poetry, the `task switch-to-poetry` sets the virtualenvs.in-project config
 to true.
@@ -442,7 +543,7 @@ configuration file.
 
 #### matrix testing
 
-When using hatch, pytest is ran on each version of python in the test matrix in
+When using hatch, pytest is run on each version of python in the test matrix in
 `pyproject.toml`:
 
     [[tool.hatch.envs.test.matrix]]
