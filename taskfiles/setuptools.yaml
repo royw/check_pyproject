@@ -73,3 +73,13 @@ tasks:
     # [private] Disable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
       - echo "Not implemented"
+
+  publish-test-pypi:
+    # [private] Publish to the test.pypi.org server.
+    cmds:
+      - echo "Not Implemented"
+
+  publish-pypi:
+    # [private] Publish to the pypi.org server.
+    cmds:
+      - echo "Not Implemented"

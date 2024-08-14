@@ -70,3 +70,13 @@ tasks:
         tool.hatch.env.requires --to-array "[]"
       - hatch -e dev run -- toml set --toml-path pyproject.toml
         tool.hatch.envs.default.type "virtual"
+
+  publish-test-pypi:
+    # [private] Publish to the test.pypi.org server.
+    cmds:
+      - echo "Not Implemented"
+
+  publish-pypi:
+    # [private] Publish to the pypi.org server.
+    cmds:
+      - echo "Not Implemented"

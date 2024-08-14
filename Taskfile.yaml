@@ -255,7 +255,8 @@ tasks:
     desc: Run the unit tests with coverage.
     cmds:
       - "{{.DEV_RUNNER}} pytest --cov-report term-missing --cov-report
-        json:metrics/coverage.json --cov=./ tests"
+        json:metrics/coverage.json --cov-report html:metrics/coverage
+        --cov=./src tests"
 
   docs:
     desc: Create the project documentation and open in the browser.
@@ -280,6 +281,7 @@ tasks:
       - task: fe:env-prune
       - rm -rf .tox
       - rm -rf .nox
+      - rm -rf .coverage
       - rm -rf build
       - rm -rf dist
       - rm -rf metrics
@@ -339,14 +341,24 @@ tasks:
       Disable backend to use requirements.txt files managed by pip-compile as
       lock files.
     cmds:
-      - fe:lockfiles-disable
+      - task fe:lockfiles-disable
 
   lockfiles-enable:
     desc:
       Enable backend to use requirements.txt files managed by pip-compile as
       lock files.
     cmds:
-      - fe:lockfiles-enable
+      - task fe:lockfiles-enable
+
+  publish-test-pypi:
+    desc: Publish to the test.pypi.org server.
+    cmds:
+      - task fe:publish-test-pypi
+
+  publish-pypi:
+    desc: Publish to the pypi.org server.
+    cmds:
+      - task fe:publish-pypi
 
   main:
     desc:

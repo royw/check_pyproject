@@ -60,3 +60,19 @@ tasks:
     # [private] Disable backend to use requirements.txt files managed by pip-compile as lock files.
     cmds:
       - echo "Not implemented"
+
+  publish-test-pypi:
+    # [private] Publish to the test.pypi.org server.
+    cmds:
+      - echo "Not Implemented"
+
+  publish-pypi:
+    # [private] Publish to the pypi.org server.
+    summary: |
+      https://www.digitalocean.com/community/tutorials/how-to-publish-python-packages-to-pypi-using-poetry-on-ubuntu-22-04
+      basically boils down to log into pypi.org, create an API token, then:
+      poetry config pypi-token.pypi your-api-token
+      poetry build
+      poetry publish
+    cmds:
+      - echo "Not Implemented"
