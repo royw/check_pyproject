@@ -459,7 +459,7 @@ def check_dependencies(key: str | None, project_dependencies: list[str], poetry_
         project_to_poetry_diff = project_requirements.difference(poetry_requirements)
         poetry_to_project_diff = poetry_requirements.difference(project_requirements)
         if project_to_poetry_diff or poetry_to_project_diff:
-            logger.info(
+            logger.error(
                 f"Dependencies {key_str}Differences:\n"
                 f"{format_diff_values(project_to_poetry_diff, poetry_to_project_diff)}"
             )
