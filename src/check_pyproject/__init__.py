@@ -4,7 +4,7 @@
 
 """# Check PyProject
 
-Check that [project] and [tool.poetry] tables are in-sync in the `pyproject.toml` file.
+Checks that [project] and [tool.poetry] tables are in-sync in the `pyproject.toml` file.
 
 The Python Packaging User Guide now specifies `pyproject.toml` metadata.
 
@@ -17,7 +17,7 @@ So if your project uses poetry and any other tool that requires the current pypr
 are prepping for Poetry 2.0 and do not want to use the development version of Poetry.
 then you need to manually maintain sync between [project] and [tool.poetry] tables.
 
-This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, is roughly in-sync.
+This tool checks that overlapping metadata, between [project] and [tool.poetry] tables, are roughly in-sync.
 """
 
 from __future__ import annotations

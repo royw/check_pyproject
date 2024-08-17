@@ -17,11 +17,13 @@ SPDX-License-Identifier: MIT
 - [Check PyProject](#check-pyproject)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+    - [PyPI Installation](#pypi-installation)
+    - [Development installation](#development-installation)
+      - [Development Prerequisites](#development-prerequisites)
   - [Workflows](#workflows)
     - [Tasks](#tasks)
-    - [Switching between Poetry and Hatch](#switching-between-poetry-and-hatch)
+    - [Switching between development managers](#switching-between-development-managers)
     - [Adding a dependency using poetry](#adding-a-dependency-using-poetry)
     - [Adding a dependency using hatch](#adding-a-dependency-using-hatch)
   - [License](#license)
@@ -31,7 +33,7 @@ SPDX-License-Identifier: MIT
 
 ## Overview
 
-Check that [project] and [tool.poetry] tables are in-sync in the
+Checks that [project] and [tool.poetry] tables are mostly in-sync in the
 `pyproject.toml` file.
 
 The Python Packaging User Guide now specifies `pyproject.toml` metadata.
@@ -48,9 +50,17 @@ use the development version of Poetry. then you need to manually maintain sync
 between [project] and [tool.poetry] tables.
 
 This tool checks that overlapping metadata, between [project] and [tool.poetry]
-tables, is roughly in-sync.
+tables, are roughly in-sync.
 
-## Prerequisites
+## Installation
+
+### PyPI Installation
+
+`pip install check_pyproject`
+
+### Development installation
+
+#### Development Prerequisites
 
 - Install the task manager: [Task](https://taskfile.dev/)
 - Optionally install [pyenv-installer](https://github.com/pyenv/pyenv-installer)
@@ -73,14 +83,12 @@ tables, is roughly in-sync.
   - Install [pip-tools](https://pypi.org/project/pip-tools/)
   - Install [twine](https://twine.readthedocs.io/)
 
-## Installation
-
 Install the package using your favorite dev tool. Examples:
 
 - `git clone git@github.com:royw/check_pyproject.git`
 - `cd check_pyproject`
 - `task init`
-- `task build`
+- `task make`
 
 _Note, `task init` will run `git init .`, `git add` the initial project files,
 and do a `git commit`. If you are using another VCS, please first edit the init
@@ -94,7 +102,7 @@ The `Taskfile.yml` is used to build your workflow as a set of tasks. The initial
 workflow is:
 
     task clean  # removes all build artifacts (metrics, docs,...)
-    task build  # lints, formats, checks pyproject.toml, and generates metrics, performs unit tests,
+    task make   # lints, formats, checks pyproject.toml, and generates metrics, performs unit tests,
                   performs multi-python version testing, and creates the package.
     task docs   # creates local documentation, starts a local server, opens the home page of the documents in a browser.
     task main   # launches the application in the poetry environment.
@@ -102,7 +110,7 @@ workflow is:
 This is a starting off point so feel free to CRUD the tasks to fit your needs,
 or not even use it.
 
-### Switching between Poetry and Hatch
+### Switching between development managers
 
 The tasks that support switching the build system:
 
@@ -126,13 +134,13 @@ file to the appropriate back-end.
 Add the dependency using the poetry CLI.
 
     poetry add --group dev some_tool
-    task build
+    task make
 
 The build ought to fail as [project] and [tool.poetry] dependencies are now out
 of sync. But the output includes the PEP 508 dependency just added that you can
 copy and paste into the [project] table's appropriate dependency.
 
-    task build
+    task make
 
 Should pass this time.
 
@@ -141,7 +149,7 @@ Should pass this time.
 Manually edit the `pyproject.toml` file and add the dependency to both [project]
 and [tool.poetry] dependency tables. Then running
 
-    task build
+    task make
 
 Will show any version specifier mismatches...
 
