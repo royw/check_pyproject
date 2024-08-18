@@ -216,11 +216,6 @@ tasks:
     cmds:
       - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject --version"
 
-  bump:
-    desc: "Bump the version. Required arg one of: dev, patch, minor, major"
-    cmds:
-      - scripts/bump-version "{{.CLI_ARGS}}"
-
   pypi-version:
     desc:
       Get the current version of the given package(s) from pypi and output as
@@ -286,6 +281,7 @@ tasks:
       - rm -rf dist
       - rm -rf metrics
       - rm -rf site
+      - rm -rf src/*.egg-info
       - rm -rf tests/__pycache__
       - rm -rf .*_cache
       - rm -f requirements.txt
