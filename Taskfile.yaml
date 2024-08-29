@@ -184,6 +184,8 @@ tasks:
     cmds:
       # show project's environment
       - task: fe:show-env
+      # cleanup
+      - rm -rf test-install
       # format the source code
       - task: format
       # check for programming errors/warnings
@@ -213,8 +215,11 @@ tasks:
 
   version:
     desc: Run the project, having it return its version.
+    vars:
+      APP_NAME:
+        sh: "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.name"
     cmds:
-      - "{{.DEFAULT_RUNNER}} python3 -m check_pyproject --version"
+      - "{{.DEFAULT_RUNNER}} python3 -m {{.APP_NAME}} --version"
 
   pypi-version:
     desc:
@@ -283,6 +288,7 @@ tasks:
       - rm -rf site
       - rm -rf src/*.egg-info
       - rm -rf tests/__pycache__
+      - rm -rf test-install
       - rm -rf .*_cache
       - rm -f requirements.txt
       - rm -f requirements.txt.license
@@ -348,14 +354,17 @@ tasks:
 
   publish-test-pypi:
     desc: Publish to the test.pypi.org server.
+    vars:
+      APP_NAME:
+        sh: "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.name"
     cmds:
       - "{{.DEFAULT_RUNNER}} twine upload --repository testpypi dist/*"
       - rm -rf test-install
       - mkdir test-install
       - python3 -m venv test-install/.venv
       - test-install/.venv/bin/pip3 install -i https://test.pypi.org/simple/
-        check_pyproject --extra-index-url https://pypi.org/simple/
-      - test-install/.venv/bin/check_pyproject --version
+        {{.APP_NAME}} --extra-index-url https://pypi.org/simple/
+      - test-install/.venv/bin/{{.APP_NAME}} --version
       - echo "ok to delete test-install/"
 
   publish-pypi:
@@ -381,3 +390,8 @@ tasks:
         sh: "{{.DEV_RUNNER}} toml get --toml-path pyproject.toml project.name"
     cmds:
       - "{{.DEFAULT_RUNNER}} {{.APP_NAME}} {{.CLI_ARGS}}"
+
+  version-bumper:
+    desc: "Manage the project's version with version-bumper"
+    cmds:
+      - "{{.DEFAULT_RUNNER}} version_bumper {{.CLI_ARGS}}"
