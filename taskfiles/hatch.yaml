@@ -53,7 +53,7 @@ tasks:
       # [private] update development virtual environment
       - hatch -e dev run -- pip install --upgrade pip
       # install project into virtual environment
-      - hatch -e dev run -- pip install -e .[dev,test,docs,metrics]
+      - hatch -e dev run -- pip install -q -e .[dev,test,docs,metrics]
 
   lockfiles-enable:
     # Enable backend to use requirements.txt files managed by pip-compile as lock files.

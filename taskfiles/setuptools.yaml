@@ -62,7 +62,7 @@ tasks:
       # [private] update development virtual environment
       - scripts/venv_runner.sh pip install --upgrade pip
       # install project into virtual environment
-      - scripts/venv_runner.sh pip install -e .[dev,test,docs,metrics]
+      - scripts/venv_runner.sh pip install -q -e .[dev,test,docs,metrics]
 
   lockfiles-enable:
     # Enable backend to use requirements.txt files managed by pip-compile as lock files.
