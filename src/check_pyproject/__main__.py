@@ -32,5 +32,5 @@ def main(args: list[str] | None = None) -> int:
     return number_of_problems
 
 
-if __name__ == "__main__":
-    sys.exit(main(args=None))  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main(args=None))
